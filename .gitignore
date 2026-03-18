@@ -1,0 +1,5 @@
+# Quartus files to ignore
+db/
+output_files/
+incremental_db/
+*.qsf
