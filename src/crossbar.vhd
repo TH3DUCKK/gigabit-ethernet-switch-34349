@@ -18,19 +18,10 @@ entity crossbar is
     -- Data inputs
     input_data  : in std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
     input_valid : in std_logic_vector(VALID_BITS - 1 downto 0);
-    input_error : in std_logic_vector(ERROR_BITS - 1 downto 0);
     -- Data outputs
     output_data  : out std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
     output_valid : out std_logic_vector(VALID_BITS - 1 downto 0);
-    output_error : out std_logic_vector(ERROR_BITS - 1 downto 0);
     -- Mac inputs
-    ready           : in std_logic;
-    input_valid_mac : in std_logic;
-    dest_port       : in std_logic_vector(NUM_PORTS - 1 downto 0); -- One bit per port
-    -- Mac outputs
-    output_valid_mac : out std_logic;
-    dest_mac         : out std_logic_vector(MAC_SIZE - 1 downto 0);
-    source_mac       : out std_logic_vector(MAC_SIZE - 1 downto 0);
-    src_port         : out std_logic_vector(NUM_PORTS - 1 downto 0) -- One bit per port
+    dest_port : in std_logic_vector(NUM_PORTS - 1 downto 0) -- One bit per port
   );
 end entity crossbar;
