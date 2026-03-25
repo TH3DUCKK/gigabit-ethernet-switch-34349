@@ -12,7 +12,7 @@ use work.constants.all;
 -- Route first
 -- Then map the source to the port
 
--- Algorithm:
+-- Algorithm: (Currently replaces at every collision)
 -- 1. On receiving a valid input, read the data.
 -- 2. Use destination MAC to determine the output port (if known).
 -- 3a. If the destination MAC is known, forward the frame to the corresponding port.
