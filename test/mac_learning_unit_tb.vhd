@@ -2,20 +2,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.constants.all;
+
 entity mac_learning_unit_tb is
 end entity mac_learning_unit_tb;
 
 architecture tb of mac_learning_unit_tb is
   -- Component declaration
   component mac_learning_unit is
-    generic (
-      NUM_PORTS      : integer := 4;
-      BITS_PER_PORT  : integer := 8;
-      DATA_BUS_WIDTH : integer := NUM_PORTS * BITS_PER_PORT;
-      VALID_BITS     : integer := NUM_PORTS;
-      ERROR_BITS     : integer := NUM_PORTS;
-      MAC_SIZE       : integer := 48
-    );
     port (
       -- Clock and reset
       clk : in std_logic;
