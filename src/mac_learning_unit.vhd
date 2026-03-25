@@ -57,7 +57,7 @@ architecture rtl of mac_learning_unit is
   type state_type is (IDLE, FORWARD_READ, FORWARD_CHECK, LEARN_READ, LEARN_CHECK, LEARN_WRITE, DONE);
 
   -- Registers
-  signal dest_port_reg, dest_port_reg_next : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dest_port_reg, dest_port_reg_next : std_logic_vector(NUM_PORTS - 1 downto 0) := (others => '0');
   signal state, state_next                 : state_type := IDLE;
 
   -- Wires
@@ -74,7 +74,7 @@ architecture rtl of mac_learning_unit is
   -- Temporary signals for since the second port is unused for now.
   signal address_b_tmp : std_logic_vector(12 downto 0) := (others => '0');
   signal data_b_tmp    : std_logic_vector(63 downto 0) := (others => '0');
-  signal wren_b_tmp    : std_logic                     := '0';
+  signal wren_b_tmp    : std_logic                     := '1';
   signal q_b_tmp       : std_logic_vector(63 downto 0) := (others => '0');
 
   -- Constant
@@ -110,11 +110,11 @@ begin
     end if;
   end process;
 
-  process (ready, valid, dest_mac, source_mac, src_port)
+  process (valid, dest_mac, source_mac, src_port, state, state_next, clk)
   begin
     -- Default outputs
     ready              <= '0';
-    dest_port          <= (others => '0');
+    dest_port          <= dest_port_reg;
     dest_port_reg_next <= dest_port_reg;
     state_next         <= state;
 
@@ -133,13 +133,14 @@ begin
         -- Check if the destination MAC is known (i.e., if the port is not zero)
         port_memory <= q_a(NUM_PORTS - 1 downto 0); -- Port information is stored in the lower 4 bits
         mac_memory  <= q_a(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
-        if port_memory /= (others => '0') then
-          dest_port_reg_next <= port_memory;
-          state_next         <= LEARN_READ;
+        
+        if mac_memory = dest_mac then
+          dest_port_reg_next <= port_memory; -- Forward to the known port
         else
-          dest_port_reg_next <= (others => '1') xor src_port;
-          state_next         <= LEARN_READ;
+          dest_port_reg_next <= std_logic_vector'(dest_port_reg_next'range => '1') xor src_port; -- Flood to all ports except source
         end if;
+
+        state_next <= LEARN_READ;
 
       when LEARN_READ =>
         -- Hash the source MAC to get the address for the MAC RAM
