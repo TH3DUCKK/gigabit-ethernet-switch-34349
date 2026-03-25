@@ -79,14 +79,12 @@ begin
     source_mac <= x"001122334455";
     src_port   <= "0001";
     valid      <= '1';
-    report "wait for ready 1" severity note;
     wait until ready = '1';
     valid <= '0'; -- Deassert valid after the first transaction
     wait for CLK_PERIOD;
 
     valid <= '1';
     dest_mac <= x"001122334455";
-    report "wait for ready 2" severity note;
     wait until ready = '1'; 
     assert (dest_port = "0001")
     report "Test case 1: Look up learned address - Expected dest_port = 0001, got " & integer'image(to_integer(unsigned(dest_port)))

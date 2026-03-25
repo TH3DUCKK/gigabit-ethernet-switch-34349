@@ -54,7 +54,7 @@ architecture rtl of mac_learning_unit is
   end component;
 
   -- States
-  type state_type is (IDLE, FORWARD_READ, FORWARD_CHECK, LEARN_READ, LEARN_CHECK, LEARN_WRITE, DONE);
+  type state_type is (IDLE, FORWARD_READ, FORWARD_CHECK, LEARN_READ, LEARN_CHECK, DONE);
 
   -- Registers
   signal dest_port_reg, dest_port_reg_next : std_logic_vector(NUM_PORTS - 1 downto 0) := (others => '0');
@@ -151,21 +151,16 @@ begin
         -- Check if the source MAC is already in the table
         port_memory <= q_a(NUM_PORTS - 1 downto 0); -- Port is stored in the lower 4 bits
         mac_memory  <= q_a(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
+        data_a     <= source_mac & "000000000000" & src_port; -- Store MAC, padding (64-48-4 = 12 bits) and port together
         if mac_memory = source_mac then
-          if port_memory /= src_port then
-            state_next <= LEARN_WRITE;
+          if port_memory = src_port then
+            state_next <= DONE;
           else
-            state_next <= Done;
+            wren_a     <= '1';
           end if;
         else
-          state_next <= LEARN_WRITE;
+          wren_a     <= '1';
         end if;
-
-      when LEARN_WRITE =>
-        data_a     <= source_mac & "000000000000" & src_port; -- Store MAC, padding (64-48-4 = 12 bits) and port together
-        wren_a     <= '1';
-        state_next <= Done;
-
       when DONE =>
         ready <= '1'; -- Indicate that the unit is ready for the next frame
         if valid = '0' then
