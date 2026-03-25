@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.constants.all;
+
 -- Description:
 -- This module implements the MAC learning unit for a gigabit Ethernet switch.
 -- It learns the source MAC addresses from incoming frames and updates the MAC address table.
@@ -20,14 +22,6 @@ use ieee.numeric_std.all;
 -- 5b. If the hashed source MAC is in the table but the port or MAC is different, update the entry with the new port or MAC.
 
 entity mac_learning_unit is
-  generic (
-    NUM_PORTS      : integer := 4;
-    BITS_PER_PORT  : integer := 8;
-    DATA_BUS_WIDTH : integer := NUM_PORTS * BITS_PER_PORT;
-    VALID_BITS     : integer := NUM_PORTS;
-    ERROR_BITS     : integer := NUM_PORTS;
-    MAC_SIZE       : integer := 48
-  );
   port (
     -- Clock and reset
     clk : in std_logic;
