@@ -139,8 +139,8 @@ begin
         port_memory <= q_a(NUM_PORTS - 1 downto 0); -- Port information is stored in the lower 4 bits
         mac_memory  <= q_a(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
         if port_memory /= (others => '0') then
-          dest_port_reg_next <= port_memory; -- Forward to the known port
-          state_next         <= Done;
+          dest_port_reg_next <= port_memory;
+          state_next         <= LEARN_READ;
         else
           dest_port_reg_next <= (others => '1') xor src_port;
           state_next         <= LEARN_READ;
@@ -157,17 +157,17 @@ begin
         mac_memory  <= q_a(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
         if mac_memory = source_mac then
           if port_memory /= src_port then
-            state_next <= LEARN_WRITE; -- Update with new port if different
+            state_next <= LEARN_WRITE;
           else
-            state_next <= Done; -- No update needed
+            state_next <= Done;
           end if;
         else
-          state_next <= LEARN_WRITE; -- Add new entry if MAC is not in table
+          state_next <= LEARN_WRITE;
         end if;
 
       when LEARN_WRITE =>
-        data_a     <= source_mac & "000000000000" & src_port; -- Store MAC and port together
-        wren_a     <= '1'; -- Write enable for learning
+        data_a     <= source_mac & "000000000000" & src_port; -- Store MAC, padding (64-48-4 = 12 bits) and port together
+        wren_a     <= '1';
         state_next <= Done;
 
       when DONE =>
