@@ -18,6 +18,7 @@ use ieee.numeric_std.all;
 -- 4. Check if the source MAC is already in the MAC address table.
 -- 5a. If the source MAC is not in the table, add it with the corresponding source port.
 -- 5b. If the hashed source MAC is in the table but the port or MAC is different, update the entry with the new port or MAC.
+
 entity mac_learning_unit is
   generic (
     NUM_PORTS      : integer := 4;
@@ -87,7 +88,7 @@ architecture rtl of mac_learning_unit is
 
 begin
 
-  MAC_RAM_inst : MAC_RAM
+  MAC_RAM_inst : entity work.MAC_RAM
   port map
   (
     address_a => address_a,
