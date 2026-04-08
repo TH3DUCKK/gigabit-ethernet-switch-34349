@@ -59,25 +59,25 @@ architecture rtl of mac_learning_top is
       rst : in std_logic;
 
       -- Input signals
-      data_in : in std_logic_vector (63 downto 0);
+      data_in : in std_logic_vector (MAC_WORD_SIZE - 1 downto 0);
 
       -- Output signals
-      address : out std_logic_vector (12 downto 0);
+      address : out std_logic_vector (MAC_RAM_SIZE_BITS - 1 downto 0);
       wren : out std_logic;
-      data_out : out std_logic_vector (63 downto 0) 
+      data_out : out std_logic_vector (MAC_WORD_SIZE - 1 downto 0) 
     );
   end component;
 
   -- Wires for interconnecting the components
-  signal data_in_mac_clearing : std_logic_vector (63 downto 0);
-  signal address_mac_clearing : std_logic_vector (12 downto 0);
+  signal data_in_mac_clearing : std_logic_vector (MAC_WORD_SIZE - 1 downto 0);
+  signal address_mac_clearing : std_logic_vector (MAC_RAM_SIZE_BITS - 1 downto 0);
   signal wren_mac_clearing : std_logic;
-  signal data_out_mac_clearing : std_logic_vector (63 downto 0);
+  signal data_out_mac_clearing : std_logic_vector (MAC_WORD_SIZE - 1 downto 0);
 
-  signal address_mac_learning : std_logic_vector (12 downto 0);
-  signal data_in_mac_learning : std_logic_vector (63 downto 0);
+  signal address_mac_learning : std_logic_vector (MAC_RAM_SIZE_BITS - 1 downto 0);
+  signal data_in_mac_learning : std_logic_vector (MAC_WORD_SIZE - 1 downto 0);
   signal wren_mac_learning : std_logic;
-  signal data_out_mac_learning : std_logic_vector (63 downto 0);
+  signal data_out_mac_learning : std_logic_vector (MAC_WORD_SIZE - 1 downto 0);
 
   begin
 
