@@ -1,7 +1,6 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
 
 entity fifo is
     generic (
@@ -42,7 +41,7 @@ architecture rtl of fifo is
 	signal wptr_gray : std_logic_vector(ADDR_WIDTH downto 0);
 	signal rptr_gray_tmp_sync : std_logic_vector(ADDR_WIDTH downto 0);
 	signal rptr_gray_sync : std_logic_vector(ADDR_WIDTH downto 0);
-	signal full_internal : std_logic;
+	signal full : std_logic;
 	
 	-- Read clk domain signals
 	--signal raddr : std_logic_vector(ADDR_WIDTH - 1 downto 0);
@@ -51,7 +50,7 @@ architecture rtl of fifo is
 	signal rptr_gray : std_logic_vector(ADDR_WIDTH downto 0);
 	signal wptr_gray_tmp_sync : std_logic_vector(ADDR_WIDTH downto 0);
 	signal wptr_gray_sync : std_logic_vector(ADDR_WIDTH downto 0);
-	signal empty_internal : std_logic;
+	signal empty : std_logic;
 
 begin
     process(clk_wr)
@@ -65,7 +64,7 @@ begin
                 rptr_gray_sync <= (others => '0');
             else
                 -- Write control logic
-                if write_enable = '1' and full_internal = '0' then
+                if write_enable = '1' and full = '0' then
                     ram_wr_en <= '1';
                     wptr <= wptr + 1;
                 else
@@ -97,7 +96,7 @@ begin
                 wptr_gray_sync <= (others => '0');
             else
                 -- Read control logic
-                if read_enable = '1' and empty_internal = '0' then
+                if read_enable = '1' and empty = '0' then
                     ram_rd_en <= '1';
                     rptr <= rptr + 1;
                 else
@@ -119,14 +118,12 @@ begin
     end process;
 
     -- Full and empty signals
-	 full_internal <= '1' when (not (wptr_gray(ADDR_WIDTH)) & wptr_gray(ADDR_WIDTH - 1 downto 0)) = rptr_gray_sync else '0';
-	 full <= full_internal;
-	 empty_internal <= '1' when wptr_gray_sync = rptr_gray else '0';
-	 empty <= empty_internal;
+    full <= (not (wptr_gray(ADDR_WIDTH)) & wptr_gray(ADDR_WIDTH - 1 downto 0)) = rptr_gray_sync;
+    empty <= wptr_gray_sync = rptr_gray;
 
     -- Address signals
-    ram_wr_addr <= wptr(ADDR_WIDTH - 1 downto 0);
-    ram_rd_addr <= rptr(ADDR_WIDTH - 1 downto 0);
+    ram_wr_addr <= wptr(ADDR_WIDTH - 2 downto 0);
+    ram_rd_addr <= rptr(ADDR_WIDTH - 2 downto 0);
 
     -- Memory connections
     rd_data <= ram_rd_data;
