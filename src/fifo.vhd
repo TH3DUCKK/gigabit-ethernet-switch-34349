@@ -3,6 +3,10 @@ USE ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+-- This module requires an external memory module when instantiated
+-- Connect the memory module to the fifo when you instantiate the fifo
+-- mem_4096 is a standard 4kB memory consisting of 4096 bytes
+
 entity fifo is
     generic (
         DATA_WIDTH : integer := 8;
@@ -52,13 +56,14 @@ architecture rtl of fifo is
 	signal wptr_gray_tmp_sync : std_logic_vector(ADDR_WIDTH downto 0);
 	signal wptr_gray_sync : std_logic_vector(ADDR_WIDTH downto 0);
 	signal empty_internal : std_logic;
+    signal rd_en_internal : std_logic;
 
 begin
     process(clk_wr)
     begin
         if rising_edge(clk_wr) then
             if rst = '1' then
-                ram_wr_en <= '0';
+                --ram_wr_en <= '0';
                 wptr <= (others => '0');
                 wptr_gray <= (others => '0');
                 rptr_gray_tmp_sync <= (others => '0');
@@ -66,10 +71,10 @@ begin
             else
                 -- Write control logic
                 if write_enable = '1' and full_internal = '0' then
-                    ram_wr_en <= '1';
+                    --ram_wr_en <= '1';
                     wptr <= wptr + 1;
                 else
-                    ram_wr_en <= '0';
+                    --ram_wr_en <= '0';
                 end if;
 
                 -- Convert binary to gray
@@ -90,7 +95,7 @@ begin
     begin
         if rising_edge(clk_rd) then
             if rst = '1' then
-                ram_rd_en <= '0';
+                rd_en_internal <= '0';
                 rptr <= (others => '0');
                 rptr_gray <= (others => '0');
                 wptr_gray_tmp_sync <= (others => '0');
@@ -98,10 +103,14 @@ begin
             else
                 -- Read control logic
                 if read_enable = '1' and empty_internal = '0' then
-                    ram_rd_en <= '1';
-                    rptr <= rptr + 1;
+                    rd_en_internal <= '1';
+                    --rptr <= rptr + 1;
                 else
-                    ram_rd_en <= '0';
+                    rd_en_internal <= '0';
+                end if;
+
+                if rd_en_internal = '1' then
+                    rptr <= rptr + 1;
                 end if;
 
                 -- Convert binary to gray
@@ -129,7 +138,10 @@ begin
     ram_rd_addr <= rptr(ADDR_WIDTH - 1 downto 0);
 
     -- Memory connections
-    rd_data <= ram_rd_data;
     ram_wr_data <= wr_data;
+    ram_wr_en <= write_enable and not full_internal;
+
+    rd_data <= ram_rd_data;
+    ram_rd_en <= rd_en_internal;
 
 end architecture rtl;
