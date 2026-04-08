@@ -33,25 +33,18 @@ entity mac_learning_unit is
     dest_mac   : in std_logic_vector(MAC_SIZE - 1 downto 0);
     -- Mac outputs
     ready     : out std_logic;
-    dest_port : out std_logic_vector(NUM_PORTS - 1 downto 0) -- One bit per port
+    dest_port : out std_logic_vector(NUM_PORTS - 1 downto 0); -- One bit per port
+
+    -- MAC_RAM interface
+    data_in : in std_logic_vector (63 downto 0);
+    address : out std_logic_vector (12 downto 0);
+    wren : out std_logic;
+    data_out : out std_logic_vector (63 downto 0)
   );
 end entity mac_learning_unit;
 architecture rtl of mac_learning_unit is
 
   -- Declarations (internal signals, types, etc.)
-  component MAC_RAM
-    port (
-      address_a : in std_logic_vector (12 downto 0);
-      address_b : in std_logic_vector (12 downto 0);
-      clock     : in std_logic := '1';
-      data_a    : in std_logic_vector (63 downto 0);
-      data_b    : in std_logic_vector (63 downto 0);
-      wren_a    : in std_logic := '0';
-      wren_b    : in std_logic := '0';
-      q_a       : out std_logic_vector (63 downto 0);
-      q_b       : out std_logic_vector (63 downto 0)
-    );
-  end component;
 
   -- States
   type state_type is (IDLE, FORWARD_READ, FORWARD_CHECK, LEARN_READ, LEARN_CHECK, DONE);
@@ -62,40 +55,15 @@ architecture rtl of mac_learning_unit is
 
   -- Wires
 
-  -- Signals for interfacing with the MAC RAM
-  signal address_a : std_logic_vector(12 downto 0);
-  signal data_a    : std_logic_vector(63 downto 0);
-  signal wren_a    : std_logic;
-
   -- Outputs from the MAC RAM and signals to get the port and MAC information
-  signal q_a         : std_logic_vector(63 downto 0);
   signal port_memory : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal mac_memory  : std_logic_vector(MAC_SIZE - 1 downto 0);
-  -- Temporary signals for since the second port is unused for now.
-  signal address_b_tmp : std_logic_vector(12 downto 0) := (others => '0');
-  signal data_b_tmp    : std_logic_vector(63 downto 0) := (others => '0');
-  signal wren_b_tmp    : std_logic                     := '1';
-  signal q_b_tmp       : std_logic_vector(63 downto 0) := (others => '0');
+
 
   -- Constant
   constant WORD_SIZE : integer := 64; -- Size of each entry in the MAC RAM ( 48 bits for MAC + padding + 4 bits for port )
 
 begin
-
-  MAC_RAM_inst : entity work.MAC_RAM
-  port map
-  (
-    address_a => address_a,
-    address_b => address_b_tmp,
-    clock     => clk,
-    data_a    => data_a,
-    data_b    => data_b_tmp,
-    wren_a    => wren_a,
-    wren_b    => wren_b_tmp,
-    q_a       => q_a,
-    q_b       => q_b_tmp
-  );
-
   process (clk, rst)
   begin
     if rising_edge(clk) then
@@ -126,13 +94,13 @@ begin
 
       when FORWARD_READ =>
         -- Hash the destination MAC to get the address for the MAC RAM
-        address_a  <= dest_mac(12 downto 0); -- Simple hash using lower 13 bits
+        address  <= dest_mac(12 downto 0); -- Simple hash using lower 13 bits
         state_next <= FORWARD_CHECK;
 
       when FORWARD_CHECK =>
-        -- Check if the destination MAC is known (i.e., if the port is not zero)
-        port_memory <= q_a(NUM_PORTS - 1 downto 0); -- Port information is stored in the lower 4 bits
-        mac_memory  <= q_a(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
+        -- Check if the destination MAC is known (i.e. if the port is not zero)
+        port_memory <= data_in(NUM_PORTS - 1 downto 0); -- Port information is stored in the lower 4 bits
+        mac_memory  <= data_in(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
         
         if mac_memory = dest_mac then
           dest_port_reg_next <= port_memory; -- Forward to the known port
@@ -144,22 +112,22 @@ begin
 
       when LEARN_READ =>
         -- Hash the source MAC to get the address for the MAC RAM
-        address_a  <= source_mac(12 downto 0);
+        address  <= source_mac(12 downto 0);
         state_next <= LEARN_CHECK;
 
       when LEARN_CHECK =>
         -- Check if the source MAC is already in the table
-        port_memory <= q_a(NUM_PORTS - 1 downto 0); -- Port is stored in the lower 4 bits
-        mac_memory  <= q_a(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
-        data_a     <= source_mac & "000000000000" & src_port; -- Store MAC, padding (64-48-4 = 12 bits) and port together
+        port_memory <= data_in(NUM_PORTS - 1 downto 0); -- Port is stored in the lower 4 bits
+        mac_memory  <= data_in(WORD_SIZE - 1 downto WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
+        data_out     <= source_mac & "000000000000" & src_port; -- Store MAC, padding (64-48-4 = 12 bits) and port together
         if mac_memory = source_mac then
           if port_memory = src_port then
             state_next <= DONE;
           else
-            wren_a     <= '1';
+            wren     <= '1';
           end if;
         else
-          wren_a     <= '1';
+          wren     <= '1';
         end if;
       when DONE =>
         ready <= '1'; -- Indicate that the unit is ready for the next frame
