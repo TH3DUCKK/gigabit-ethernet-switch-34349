@@ -12,4 +12,9 @@ package constants is
   constant ERROR_BITS     : integer := NUM_PORTS;
   constant MAC_SIZE       : integer := 48;
 
+  -- MAC learning unit constants
+  constant MAC_RAM_SIZE_BITS : integer := 13; -- Number of entries in the MAC RAM
+  constant MAC_WORD_SIZE : integer := 64; -- Size of each entry in bits (48 bits for MAC + 4 bits for port + padding)
+  constant MAC_AGE_MAX : integer := 255; -- (time in seconds = MAC_AGE_MAX * (freq / 2 * 8192))
+
 end package constants;
