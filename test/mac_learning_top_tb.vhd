@@ -4,12 +4,12 @@ use ieee.numeric_std.all;
 
 use work.constants.all;
 
-entity mac_learning_unit_tb is
-end entity mac_learning_unit_tb;
+entity mac_learning_top_tb is
+end entity mac_learning_top_tb;
 
-architecture tb of mac_learning_unit_tb is
+architecture tb of mac_learning_top_tb is
   -- Component declaration
-  component mac_learning_unit is
+  component mac_learning_top is
     port (
       -- Clock and reset
       clk : in std_logic;
@@ -23,7 +23,7 @@ architecture tb of mac_learning_unit_tb is
       ready     : out std_logic;
       dest_port : out std_logic_vector(NUM_PORTS - 1 downto 0) -- One bit per port
     );
-  end component mac_learning_unit;
+  end component mac_learning_top;
 
   type test_state_type is (INIT, TEST1, TEST2, TEST3, END_SIM);
   signal test_state : test_state_type := INIT;
@@ -42,7 +42,7 @@ architecture tb of mac_learning_unit_tb is
 
 begin
   -- Instantiate the unit under test
-  dut : mac_learning_unit
+  dut : mac_learning_top
   port map (
   clk        => clk,
   rst        => rst,
