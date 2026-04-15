@@ -58,7 +58,7 @@ architecture rtl of mac_learning_unit is
   -- Outputs from the MAC RAM and signals to get the port and MAC information
   signal port_memory : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal mac_memory  : std_logic_vector(MAC_SIZE - 1 downto 0);
-  signal mac_age   : std_logic_vector(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0); -- Age information for overwriting entries
+  signal mac_age     : std_logic_vector(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0); -- Age information for overwriting entries
 
 begin
   process (clk, rst)
@@ -79,6 +79,7 @@ begin
   begin
     -- Default outputs
     ready              <= '0';
+    wren               <= '0';
     dest_port          <= dest_port_reg;
     dest_port_reg_next <= dest_port_reg;
     state_next         <= state;
@@ -115,23 +116,24 @@ begin
       when LEARN_CHECK =>
         -- Check if the source MAC is already in the table
         mac_memory  <= data_in(MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
-        port_memory <= data_in(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS); -- Port is stored in the lower 4 bits
-        data_out    <= (MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS => (source_mac & src_port), others => '0'); -- Store MAC, port and padding (64-48-4 = 12 bits) together
-        
-        -- TODO:
-        -- Handle the 3 write cases:
-        -- 1. If the hashed source MAC is empty, add it with the corresponding source port.
-        -- 2. If the hashed source MAC is in the table but the max age has been reached, overwrite it with the new MAC and port.
-        -- 3. If the hashed source MAC is in the table but it is a perfect match (same MAC and port), reset the age counter to prevent it from being overwritten.:w 
-        if mac_memory = source_mac then
-          if port_memory = src_port then
-            state_next <= DONE;
-          else
-            wren <= '1';
-          end if;
-        else
+        port_memory <= data_in(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS); -- Port is stored in the next 4 bits
+        mac_age     <= data_in(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0); -- Age information is stored in the remaining bits
+        data_out    <= (others => '0'); -- Default to zero for padding
+        data_out(MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE) <= source_mac; -- Store the source MAC in the upper bits
+        data_out(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS) <= src_port; -- Store the source port in the next 4 bits
+
+        -- Case 1: If the hashed source MAC is in the table and it is a perfect match (same MAC and port), reset the age counter.
+        if mac_memory = source_mac and port_memory = src_port then
+          wren <= '1'; -- Reset the age counter
+        -- Case 2: If the hashed source MAC is in the table but the max age has been reached, overwrite it with the new MAC and port.
+        elsif to_integer(unsigned(mac_age)) = MAC_AGE_MAX then
+          wren <= '1';
+        -- Case 3: If the hashed source MAC is empty, add it with the corresponding source port. (Assuming that we never get an all zero mac address)
+        elsif mac_memory = (mac_memory'range => '0') then
           wren <= '1';
         end if;
+        
+        state_next <= DONE;
 
       when DONE =>
         ready <= '1'; -- Indicate that the unit is ready for the next frame
