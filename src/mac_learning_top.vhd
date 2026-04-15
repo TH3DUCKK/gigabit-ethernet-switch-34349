@@ -60,6 +60,7 @@ architecture rtl of mac_learning_top is
 
       -- Input signals
       data_in : in std_logic_vector (MAC_WORD_SIZE - 1 downto 0);
+      source_mac : in std_logic_vector(MAC_SIZE - 1 downto 0);
 
       -- Output signals
       address : out std_logic_vector (MAC_RAM_SIZE_BITS - 1 downto 0);
@@ -115,6 +116,7 @@ architecture rtl of mac_learning_top is
         clk => clk,
         rst => rst,
         data_in => data_in_mac_clearing,
+        source_mac => source_mac,
         address => address_mac_clearing,
         wren => wren_mac_clearing,
         data_out => data_out_mac_clearing
