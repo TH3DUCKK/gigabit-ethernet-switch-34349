@@ -21,15 +21,24 @@ entity fcs_slice is
 end entity fcs_slice;
 
 architecture rtl of fcs_slice is
+  -- Polynomials and "input message"
   constant G : std_logic_vector(31 downto 0) := "00000100110000010001110110110111"; -- generator polynomial
   signal R   : std_logic_vector(31 downto 0) := x"00000000"; -- remainder polynomial
   signal M   : std_logic_vector(7 downto 0)  := x"00"; -- input message
-  signal start_cnt : std_logic_vector(4 downto 0)  := "00000"; -- counter to know how many bits to invert at the start
+
+  -- Counters
+  signal start_cnt : std_logic_vector(1 downto 0)  := "00"; -- counter to know how many bits to invert at the start
   signal preamble_cnt : std_logic_vector(2 downto 0)  := "000"; -- counter to track how many bytes to ignore at the start
-  --signal preamble_reading : std_logic := '0'; -- signal indicating the preamble is being read
-  signal frame_starting : std_logic := '0'; -- signal indicating a packet is starting
+
+  -- Registers for input data
+  signal data_in : std_logic_vector(7 downto 0) := "00000000";
+  signal valid_in : std_logic := '0'; -- signal storing valid input value
   signal prev_valid_in : std_logic := '0'; -- signal storing previous valid input value
-  signal state : std_logic_vector(1 downto 0); -- state register, read states below
+
+  -- FSM related
+  type state_t is (IDLE, PREAMBLE, PACKET_START, REST_OF_PACKET, EVAL_ERROR);
+  signal state : state_t;
+
 begin
   process(clk, rst)
   begin
@@ -37,81 +46,85 @@ begin
       if rst = '0' then
         R <= x"00000000";
         M <= x"00";
-        start_cnt <= "00000";
+        start_cnt <= "00";
         preamble_cnt <= "000";
-        frame_starting <= '0';
+        data_in <= "00000000";
+        valid_in <= '0';
         prev_valid_in <= '0';
+        state <= IDLE;
       else
-        -- setting io
-        output_data <= input_data;
-        output_valid <= input_valid;
-      
-        -- saving previous valid value
-        prev_valid_in <= input_valid;
+        -- putting inputs into registers
+        data_in <= input_data;
+        valid_in <= input_valid;
+        prev_valid_in <= valid_in;
+        
+        -- setting outputs
+        output_data <= data_in;
+        output_valid <= valid_in;
 
         -- default assignment (gets overwritten by the FSM below)
         output_error <= '0';
 
         -- FSM states
-        -- 00 - IDLE: No data is being provided at the input
-        -- 01 - PREAMBLE: The preamble is being read
-        -- 10 - PACKET_START: The first 4 bytes are inverted in the remainder polynomial
-        -- 11 - REST_OF_PACKET All other bytes are read normally into the remainder polynomial
+        -- IDLE: No data is being provided at the input
+        -- PREAMBLE: The preamble is being read
+        -- PACKET_START: The first 4 bytes are inverted in the remainder polynomial
+        -- REST_OF_PACKET: All other bytes are read normally into the remainder polynomial
+        -- EVAL_ERROR: Evaluates if an error has occured
         case state is
-          -- IDLE
-          when "00" =>
-            if prev_valid_in = '0' and input_valid = '1' and preamble_cnt = "000" then
-              preamble_cnt <= "001";
-              state <= "01";
+          when IDLE =>
+            if prev_valid_in = '0' and valid_in = '1' and preamble_cnt = "000" then
+              state <= PREAMBLE;
             else
-              state <= "00";
+              state <= IDLE;
             end if;
           
-          -- PREAMBLE
-          when "01" =>
-            if preamble_cnt <= "111" then
-              M <= x"00";
+          when PREAMBLE =>
+            if preamble_cnt = "111" then
+              M <= not data_in;
               preamble_cnt <= "000";
-              start_cnt <= "00001";
+              start_cnt <= "00";
               R <= x"00000000";
-              state <= "10";
+              state <= PACKET_START;
             else
-              M <= not input_data;
-              preamble_cnt <= preamble_cnt + '1';
-              start_cnt <= "00000";
-              state <= "01";
-            end if;
-        
-          -- PACKET_START
-          when "10" =>
-            if start_cnt = "11111" then
-              M <= input_data;
-              start_cnt <= "00000";
-              state <= "11";
-            else
-              M <= not input_data;
-              start_cnt <= start_cnt + '1';
-              state <= "10";
-            end if;
-        
-          -- REST_OF_PACKET
-          when "11" =>
-            if prev_valid_in = '1' and input_valid = '0' then
               M <= x"00";
-              if R /= x"FFFFFFFF" then
-                output_error <= '1';
-              else
-                output_error <= '0';
-              end if;
+              preamble_cnt <= preamble_cnt + '1';
+              state <= PREAMBLE;
+            end if;
+          
+          when PACKET_START =>
+            if start_cnt = "11" then
+              M <= data_in;
+              start_cnt <= "00";
+              state <= REST_OF_PACKET;
             else
-              M <= input_data;
-              state <= "00";
+              M <= not data_in;
+              start_cnt <= start_cnt + '1';
+              state <= PACKET_START;
+            end if;
+          
+          when REST_OF_PACKET =>
+            if prev_valid_in = '1' and valid_in = '0' then
+              M <= x"00";
+              state <= EVAL_ERROR;
+            else
+              M <= data_in;
+              state <= REST_OF_PACKET;
             end if;
 
-            when others =>
-              state <= "00";
-        end case;
+          when EVAL_ERROR =>
+            state <= IDLE;
+            if R /= x"FFFFFFFF" then
+              output_error <= '1';
+            else
+              output_error <= '0';
+            end if;
 
+          
+          when others =>
+            state <= IDLE;
+        end case;
+        
         -- R signal definitions based on matlab script
         R(0)  <= R(24) xor R(30) xor M(0);
         R(1)  <= R(24) xor R(25) xor R(30) xor R(31) xor M(1);
