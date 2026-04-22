@@ -4,6 +4,13 @@ use ieee.numeric_std.all;
 
 use work.constants.all;
 
+-- Description:
+-- Top module for the data parking module that instantiates 4 sub-modules
+-- that each "park" data from the FCS/CRC module.
+-- This module functions as an arbiter between the four sub-modules
+-- and the MAC learning unit. The arbitration will be handled by a simple
+-- round-Robin "algorithm".
+
 entity data_parking is
   port (
     -- Clock and reset
@@ -29,11 +36,14 @@ entity data_parking is
 end entity data_parking;
 
 architecture rtl of data_parking is
+
+
+
 begin
   process (clk, rst)
   begin
     if rising_edge(clk) then
-      if rst = '1' then
+      if rst = '0' then
         -- Reset logic
         output_data <= (others => '0');
       else
