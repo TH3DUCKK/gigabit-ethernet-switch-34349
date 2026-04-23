@@ -1,0 +1,164 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+
+entity fifo_mem is
+
+    generic (
+        DATA_WIDTH : integer := 8;
+        ADDR_WIDTH : integer := 12
+    );
+
+    port (
+        -- Clocks and reset
+        clk_wr : in std_logic;
+        clk_rd : in std_logic;
+        rst    : in std_logic;
+
+        -- Write side
+        wr_data      : in std_logic_vector(7 downto 0);
+        write_enable : in std_logic;
+        full         : out std_logic;
+
+        -- Read side
+        rd_data      : out std_logic_vector(7 downto 0);
+        read_enable  : in std_logic;
+        empty        : out std_logic
+   	);
+
+end entity fifo_mem;
+
+architecture rtl of fifo_mem is
+
+
+	-- internal signals to connect fifo and mem
+	signal data_con		: STD_LOGIC_VECTOR (7 DOWNTO 0);
+	signal rdaddress_con	: STD_LOGIC_VECTOR (11 DOWNTO 0);
+	signal rden_con		: STD_LOGIC  := '1';
+	signal wraddress_con	: STD_LOGIC_VECTOR (11 DOWNTO 0);
+	signal wren_con		: STD_LOGIC  := '0';
+	signal q_con		: STD_LOGIC_VECTOR (7 DOWNTO 0);
+	
+
+	component fifo
+
+		generic (
+        		DATA_WIDTH : integer := 8;
+       			ADDR_WIDTH : integer := 12
+   		 );
+
+		port (
+			clk_wr 		: in std_logic;
+			clk_rd 		: in std_logic; 
+			rst 		: in std_logic; 
+	
+			wr_data 	: in std_logic_vector(7 downto 0); 
+			write_enable 	: in std_logic; 
+			full 		: out std_logic; 
+
+			rd_data 	: out std_logic_vector(7 downto 0); 
+			read_enable	: in std_logic; 
+			empty		: out std_logic; 
+
+			ram_wr_en   : out std_logic;
+        		ram_wr_addr : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+        		ram_wr_data : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        		ram_rd_en   : out std_logic;
+        		ram_rd_addr : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+        		ram_rd_data : in  std_logic_vector(DATA_WIDTH-1 downto 0)
+			); 
+
+	end component;
+
+	component mem
+		port(
+			data		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+			rdaddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+			rdclock		: IN STD_LOGIC ;
+			rden		: IN STD_LOGIC  := '1';
+			wraddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+			wrclock		: IN STD_LOGIC  := '1';
+			wren		: IN STD_LOGIC  := '0';
+			q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+			); 
+
+	end component;
+
+	begin
+
+	fifo_inst : fifo
+
+		 generic map (
+        		DATA_WIDTH => DATA_WIDTH,
+       			ADDR_WIDTH => ADDR_WIDTH
+    		)
+
+		port map(
+			clk_wr => clk_wr, 
+			clk_rd => clk_rd,
+			rst => rst,
+			wr_data => wr_data,
+			write_enable => write_enable,
+			full => full, 
+			rd_data => rd_data, 
+			read_enable => read_enable,
+			empty => empty, 
+			ram_wr_en => wren_con,
+			ram_wr_addr => wraddress_con,
+			ram_wr_data => data_con,
+			ram_rd_en => rden_con,
+			ram_rd_addr => rdaddress_con,
+			ram_rd_data => q_con	
+		); 
+
+	mem_inst : mem
+		port map(
+			data => data_con,
+			rdaddress => rdaddress_con,
+			rdclock => clk_rd,
+			rden => rden_con,
+			wraddress => wraddress_con,
+			wrclock => clk_wr, 
+			wren => wren_con, 
+			q => q_con
+		); 
+
+end rtl; 
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

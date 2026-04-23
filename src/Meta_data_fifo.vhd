@@ -4,10 +4,10 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 
-entity fifo is
+entity Meta_data_fifo is
     generic (
-        DATA_WIDTH : integer := 8;
-        ADDR_WIDTH : integer := 12
+        DATA_WIDTH : integer := 16;
+        ADDR_WIDTH : integer := 6
     );
     port (
         -- Clocks and reset
@@ -15,51 +15,50 @@ entity fifo is
         rst    : in std_logic;
 
         -- Write side
-        wr_data      : in std_logic_vector(7 downto 0);
+        wr_data      : in std_logic_vector(15 downto 0);
         write_enable : in std_logic;
         full         : out std_logic;
 
         -- Read side
-        rd_data      : out std_logic_vector(7 downto 0);
+        rd_data      : out std_logic_vector(15 downto 0);
         read_enable  : in std_logic;
         empty        : out std_logic
 
        
     );
-end entity fifo;
+end entity Meta_data_fifo ;
 
-architecture rtl of fifo is
+architecture rtl of Meta_data_fifo  is
 
 	-- Write
-	signal waddr : std_logic_vector(ADDR_WIDTH - 1 downto 0) := x"000";
+	signal waddr : std_logic_vector(ADDR_WIDTH - 1 downto 0) := "000000";
 	signal wen : std_logic;
-	signal wptr : std_logic_vector(ADDR_WIDTH downto 0):= "0000000000000";
+	signal wptr : std_logic_vector(ADDR_WIDTH downto 0):= "0000000";
 	signal full_internal : std_logic;
 	
 	-- Read 
-	signal raddr : std_logic_vector(ADDR_WIDTH - 1 downto 0) := x"000";
+	signal raddr : std_logic_vector(ADDR_WIDTH - 1 downto 0) := "000000";
 	signal ren : std_logic;
-	signal rptr : std_logic_vector(ADDR_WIDTH downto 0):= "0000000000000";
+	signal rptr : std_logic_vector(ADDR_WIDTH downto 0):= "0000000";
 	signal empty_internal : std_logic;
-    	--signal rd_en_internal : std_logic;
 
-	component mem_4096
+	component mem_64
 		port(
-			data		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-			rdaddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+			data		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			rdaddress	: IN STD_LOGIC_VECTOR (5 DOWNTO 0);
 			rdclock		: IN STD_LOGIC ;
 			rden		: IN STD_LOGIC  := '1';
-			wraddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+			wraddress	: IN STD_LOGIC_VECTOR (5 DOWNTO 0);
 			wrclock		: IN STD_LOGIC  := '1';
 			wren		: IN STD_LOGIC  := '0';
-			q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+			q		: OUT STD_LOGIC_VECTOR (15 DOWNTO 0)
 			); 
 
 	end component;
 
 begin
 
-	mem_inst : mem_4096
+	mem_inst : mem_64
 		port map(
 			data => wr_data,
 			rdaddress => raddr,
@@ -96,23 +95,14 @@ begin
     begin
         if rising_edge(clk) then
             if rst = '1' then
-                --rd_en_internal <= '0';
-                rptr <= (others => '0');
-              
+                rptr <= (others => '0');  
             else
                 -- Read control logic
                 if read_enable = '1' and empty_internal = '0' then
-                    --rd_en_internal <= '1';
                     rptr <= rptr + 1;
                 else
                     --rd_en_internal <= '0';
-                end if;
-
-                --if rd_en_internal = '1' then
-                --    rptr <= rptr + 1;
-                --end if;
-
-             
+                end if;             
             end if;
 
         end if;

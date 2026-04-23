@@ -6,7 +6,6 @@ package constants is
 
   -- General constants
   constant NUM_PORTS      : integer := 4;
-  constant NUM_PORTS_WIDTH: integer := 2; 
   constant BITS_PER_PORT  : integer := 8;
   constant DATA_BUS_WIDTH : integer := NUM_PORTS * BITS_PER_PORT;
   constant VALID_BITS     : integer := NUM_PORTS;

@@ -40,27 +40,27 @@ USE ieee.std_logic_1164.all;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
-ENTITY mem_4096 IS
+ENTITY mem_64 IS
 	PORT
 	(
-		data		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-		rdaddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+		data		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+		rdaddress	: IN STD_LOGIC_VECTOR (5 DOWNTO 0);
 		rdclock		: IN STD_LOGIC ;
 		rden		: IN STD_LOGIC  := '1';
-		wraddress	: IN STD_LOGIC_VECTOR (11 DOWNTO 0);
+		wraddress	: IN STD_LOGIC_VECTOR (5 DOWNTO 0);
 		wrclock		: IN STD_LOGIC  := '1';
 		wren		: IN STD_LOGIC  := '0';
-		q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+		q		: OUT STD_LOGIC_VECTOR (15 DOWNTO 0)
 	);
-END mem_4096;
+END mem_64;
 
 
-ARCHITECTURE SYN OF mem_4096 IS
+ARCHITECTURE SYN OF mem_64 IS
 
-	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (7 DOWNTO 0);
+	SIGNAL sub_wire0	: STD_LOGIC_VECTOR (15 DOWNTO 0);
 
 BEGIN
-	q    <= sub_wire0(7 DOWNTO 0);
+	q    <= sub_wire0(15 DOWNTO 0);
 
 	altsyncram_component : altsyncram
 	GENERIC MAP (
@@ -71,17 +71,17 @@ BEGIN
 		clock_enable_output_b => "BYPASS",
 		intended_device_family => "Cyclone V",
 		lpm_type => "altsyncram",
-		numwords_a => 4096,
-		numwords_b => 4096,
+		numwords_a => 128,
+		numwords_b => 128,
 		operation_mode => "DUAL_PORT",
 		outdata_aclr_b => "NONE",
 		outdata_reg_b => "CLOCK1",
 		power_up_uninitialized => "FALSE",
 		rdcontrol_reg_b => "CLOCK1",
-		widthad_a => 12,
-		widthad_b => 12,
-		width_a => 8,
-		width_b => 8,
+		widthad_a => 6,
+		widthad_b => 6,
+		width_a => 16,
+		width_b => 16,
 		width_byteena_a => 1
 	)
 	PORT MAP (
