@@ -47,7 +47,7 @@ architecture rtl of mac_learning_unit is
   -- Declarations (internal signals, types, etc.)
 
   -- States
-  type state_type is (IDLE, FORWARD_READ, FORWARD_CHECK, LEARN_READ, LEARN_CHECK, DONE);
+  type state_type is (IDLE, FORWARD_READ, FORWARD_WAIT,  FORWARD_CHECK, LEARN_READ, LEARN_WAIT,  LEARN_CHECK, DONE);
 
   -- Registers
   signal dest_port_reg, dest_port_reg_next : std_logic_vector(NUM_PORTS - 1 downto 0) := (others => '0');
@@ -82,14 +82,20 @@ begin
     end if;
   end process;
 
-  process (valid, dest_mac, source_mac, src_port, state, state_next, clk)
+  process (valid, src_port, source_mac, dest_mac, data_in, clk, dest_port_reg_enable, port_memory, mac_memory, mac_age, state, dest_port_reg, wren)
   begin
     -- Default outputs
-    ready              <= '0';
-    wren               <= '0';
+    state_next         <= state;
     dest_port          <= dest_port_reg;
     dest_port_reg_next <= dest_port_reg;
-    state_next         <= state;
+    ready              <= '0';
+    wren               <= '0';
+    dest_port_reg_enable <= '0';
+    address            <= (others => '0');
+    data_out           <= (others => '0');
+    port_memory        <= (others => '0');
+    mac_memory         <= (others => '0');
+    mac_age            <= (others => '0');
 
     case state is
       when IDLE =>
@@ -100,17 +106,28 @@ begin
       when FORWARD_READ =>
         -- Hash the destination MAC to get the address for the MAC RAM
         address    <= dest_mac(MAC_RAM_SIZE_BITS - 1 downto 0); -- Simple hash using lower 13 bits
+        state_next <= FORWARD_WAIT;
+
+      when FORWARD_WAIT =>
+        -- Wait for the MAC RAM read to complete (beacause of output register in the MAC RAM)
         state_next <= FORWARD_CHECK;
 
       when FORWARD_CHECK =>
         -- Check if the destination MAC is known (i.e. if the port is not zero)
+        dest_port_reg_enable <= '1'; -- Enable the dest_port_reg to update the output port
         mac_memory  <= data_in(MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
-        port_memory <= data_in(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS); -- Port information is stored in the lower 4 bits
+        port_memory <= data_in(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS); -- Port information is stored in the 4 bits after MAC information
 
         if mac_memory = dest_mac then
           dest_port_reg_next <= port_memory; -- Forward to the known port
         else
-          dest_port_reg_next <= std_logic_vector'(dest_port_reg_next'range => '1') xor src_port; -- Flood to all ports except source
+          assert mac_memory /= dest_mac
+          report "No hit in lookup flooding ports"
+            severity FAILURE;
+
+          --dest_port_reg_next <= std_logic_vector'(dest_port_reg_next'range => '1') xor src_port; -- Flood to all ports except source
+          --dest_port_reg_next <= std_logic_vector(to_unsigned((2**NUM_PORTS) - 1, NUM_PORTS)) xor src_port; -- Flood to all ports except source
+          dest_port_reg_next <= not src_port; -- Flood to all ports except source
         end if;
 
         state_next <= LEARN_READ;
@@ -118,28 +135,44 @@ begin
       when LEARN_READ =>
         -- Hash the source MAC to get the address for the MAC RAM
         address    <= source_mac(MAC_RAM_SIZE_BITS - 1 downto 0);
+        state_next <= LEARN_WAIT;
+    
+      when LEARN_WAIT =>
+        -- Wait for the MAC RAM read to complete (beacause of output register in the MAC RAM)
         state_next <= LEARN_CHECK;
 
       when LEARN_CHECK =>
         -- Check if the source MAC is already in the table
+        address    <= source_mac(MAC_RAM_SIZE_BITS - 1 downto 0); -- Address for learning is based on the source MAC
         mac_memory  <= data_in(MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE); -- MAC information is stored in the upper bits
         port_memory <= data_in(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS); -- Port is stored in the next 4 bits
         mac_age     <= data_in(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0); -- Age information is stored in the remaining bits
-        data_out    <= (others => '0'); -- Default to zero for padding
-        data_out(MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE) <= source_mac; -- Store the source MAC in the upper bits
-        data_out(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS) <= src_port; -- Store the source port in the next 4 bits
+        --wren        <= '0';
+        --data_out                                                                           <= (others => '0'); -- Default to zero for padding
+        --data_out(MAC_WORD_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE)                        <= source_mac; -- Store the source MAC in the upper bits
+        --data_out(MAC_WORD_SIZE - MAC_SIZE - 1 downto MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS) <= src_port; -- Store the source port in the next 4 bits
+        data_out <= source_mac & src_port & std_logic_vector(to_unsigned(0, MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS)); -- Store the source MAC in the upper bits, port in the next, age 0
 
         -- Case 1: If the hashed source MAC is in the table and it is a perfect match (same MAC and port), reset the age counter.
         if mac_memory = source_mac and port_memory = src_port then
+          assert mac_memory = source_mac and port_memory = src_port
+            report "Error in learning: something is wrong with the MAC RAM read/write logic"
+            severity failure;
           wren <= '1'; -- Reset the age counter
-        -- Case 2: If the hashed source MAC is in the table but the max age has been reached, overwrite it with the new MAC and port.
+          -- Case 2: If the hashed source MAC is in the table but the max age has been reached, overwrite it with the new MAC and port.
         elsif to_integer(unsigned(mac_age)) = MAC_AGE_MAX then
+          assert to_integer(unsigned(mac_age)) = MAC_AGE_MAX
+            report "Error in learning: something is wrong with the MAC RAM age counter logic"
+            severity failure;
           wren <= '1';
-        -- Case 3: If the hashed source MAC is empty, add it with the corresponding source port. (Assuming that we never get an all zero mac address)
-        elsif mac_memory = (mac_memory'range => '0') then
+          -- Case 3: If the hashed source MAC is empty, add it with the corresponding source port. (Assuming that we never get an all zero mac address)
+        elsif unsigned(mac_memory) = 0 then
+          assert unsigned(mac_memory) = 0
+            report "Error in learning: something is wrong with the MAC RAM empty entry logic"
+            severity failure;
           wren <= '1';
         end if;
-        
+
         state_next <= DONE;
 
       when DONE =>
