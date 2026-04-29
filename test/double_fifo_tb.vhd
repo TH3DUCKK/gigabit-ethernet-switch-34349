@@ -1,0 +1,135 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+
+use work.constants.all;
+
+entity double_fifo_tb is
+end entity double_fifo_tb;
+
+architecture sim of double_fifo_tb is
+
+  constant CLK_PERIOD : time := 10 ns;
+
+  -- DUT signals
+  signal clk             : std_logic := '0';
+  signal rst             : std_logic := '0';
+
+  -- Write interface
+  signal wr_en           : std_logic := '0';
+  signal write_data      : std_logic_vector(BITS_PER_PORT-1 downto 0) := (others => '0');
+  signal error_data      : std_logic := '0';
+
+  -- Destination input
+  signal dest_port       : std_logic_vector(NUM_PORTS-1 downto 0) := (others => '0');
+  signal dest_port_valid : std_logic := '0';
+
+  -- Request to send
+  signal request_ack     : std_logic_vector(NUM_PORTS-1 downto 0) := (others => '0');
+  signal out_data_valid  : std_logic;
+  signal send_request    : std_logic_vector(NUM_PORTS-1 downto 0);
+  signal packet_data     : std_logic_vector(BITS_PER_PORT-1 downto 0);
+
+begin
+
+  -- DUT Instantiation
+  dut : entity work.double_fifo
+    generic map (
+      DATA_WIDTH => BITS_PER_PORT,
+      NUM_PORTS  => NUM_PORTS
+    )
+    port map (
+      clk             => clk,
+      rst             => rst,
+
+      wr_en           => wr_en,
+      write_data      => write_data,
+      error_data      => error_data,
+
+      dest_port       => dest_port,
+      dest_port_valid => dest_port_valid,
+
+      request_ack     => request_ack,
+      out_data_valid  => out_data_valid,
+      send_request    => send_request,
+      packet_data     => packet_data
+    );
+
+  -- Clock Generation
+  clk_process : process
+  begin
+    while true loop
+      clk <= '0';
+      wait for CLK_PERIOD / 2;
+
+      clk <= '1';
+      wait for CLK_PERIOD / 2;
+    end loop;
+  end process;
+
+  -- Reset Generation
+  rst_process : process
+  begin
+    rst <= '0';
+    wait for 5 * CLK_PERIOD;
+
+    rst <= '1';
+    wait;
+  end process;
+
+  -- Stimulus Process
+  stim_proc : process
+  begin
+
+    -- Wait until reset deasserted
+    wait until rst = '1';
+    wait until rising_edge(clk);
+
+    -- Example Packet Write
+    wr_en           <= '1';
+    write_data      <= "01010101";
+    error_data      <= '0';
+
+    dest_port       <= "0001";
+    dest_port_valid <= '1';
+
+    wait until rising_edge(clk);
+
+    wr_en           <= '0';
+    dest_port_valid <= '0';
+
+    -- Simulate request acknowledge
+    wait for 5 * CLK_PERIOD;
+
+    request_ack <= "0001";
+
+    wait until rising_edge(clk);
+
+    request_ack <= (others => '0');
+
+    -- Example Error Packet
+    wait for 5 * CLK_PERIOD;
+
+    wr_en           <= '1';
+    write_data      <= "10101010";
+    error_data      <= '1';
+
+    dest_port       <= "0010";
+    dest_port_valid <= '1';
+
+    wait until rising_edge(clk);
+
+    wait for 1 * CLK_PERIOD;
+
+    wr_en           <= '0';
+    dest_port_valid <= '0';
+    error_data      <= '0';
+
+    -- End Simulation
+    wait for 20 * CLK_PERIOD;
+    assert false report "Simulation finished" severity failure;
+
+  end process;
+
+end architecture sim;

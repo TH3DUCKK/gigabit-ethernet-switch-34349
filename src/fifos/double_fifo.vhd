@@ -18,7 +18,7 @@ entity double_fifo is
 
     -- Write interface
     wr_en           : in  std_logic;
-    write_data      : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    write_data      : in  std_logic_vector(BITS_PER_PORT-1 downto 0);
     error_data      : in  std_logic;
 
     -- Destination input
@@ -29,20 +29,21 @@ entity double_fifo is
     request_ack     : in  std_logic_vector(NUM_PORTS-1 downto 0);
     out_data_valid  : out std_logic;
     send_request    : out std_logic_vector(NUM_PORTS-1 downto 0);
-    packet_data     : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    packet_data     : out std_logic_vector(BITS_PER_PORT-1 downto 0)
   );
 end entity double_fifo;
 
 architecture rtl of double_fifo is
   -- Signals for writing data
-  signal meta_data_write   : std_logic_vector(15 downto 0);
-  signal write_data_in     : std_logic_vector(7 downto 0);
-  signal wr_en_in          : std_logic;
-  signal wr_en_in_prev     : std_logic;
-  signal packet_length_cnt : std_logic_vector(10 downto 0);
+  --signal meta_data_write    : std_logic_vector(15 downto 0);
+  signal write_data_in      : std_logic_vector(7 downto 0);
+  signal write_data_in_prev : std_logic_vector(7 downto 0);
+  signal wr_en_in           : std_logic;
+  signal wr_en_in_prev      : std_logic;
+  signal packet_length_cnt  : std_logic_vector(10 downto 0);
 
   -- Signals for reading and transfering data
-  signal meta_data_hold   : std_logic_vector(15 downto 0);
+  --signal meta_data_hold   : std_logic_vector(15 downto 0);
   signal packets_sent     : std_logic_vector(10 downto 0);
   signal packet_amount    : std_logic_vector(10 downto 0);
   signal send_request_out : std_logic_vector(NUM_PORTS-1 downto 0);
@@ -55,8 +56,8 @@ architecture rtl of double_fifo is
   signal read_current_state, read_next_state : read_state_type;
 
   -- ---------- SMALL FIFO SIGNALS ----------
-  signal clk_meta        : std_logic;
-  signal rst_meta        : std_logic;
+  --signal clk_meta        : std_logic;
+  --signal rst_meta        : std_logic;
 
   signal wr_en_meta      : std_logic;
   signal write_data_meta : std_logic_vector(15 downto 0);
@@ -68,8 +69,8 @@ architecture rtl of double_fifo is
   signal empty_meta      : std_logic;
 
   -- ---------- LARGE FIFO SIGNALS ----------
-  signal clk_packet           : std_logic;
-  signal rst_packet           : std_logic;
+  --signal clk_packet           : std_logic;
+  --signal rst_packet           : std_logic;
 
   signal wr_en_packet         : std_logic;
   signal write_data_packet    : std_logic_vector(7 downto 0);
@@ -81,6 +82,7 @@ architecture rtl of double_fifo is
   signal jump_size_packet     : std_logic_vector(10 downto 0);
 
   signal full_packet          : std_logic;
+  signal almost_full_packet   : std_logic;
   signal empty_packet         : std_logic;
 
   component sync_fifo_64
@@ -117,13 +119,13 @@ architecture rtl of double_fifo is
       jump_read_ptr : in  std_logic;
       jump_size     : in  std_logic_vector(10 downto 0);
       full          : out std_logic;
+      almost_full   : out std_logic;
       empty         : out std_logic
     );
   end component;
 begin
 
   packet_data <= read_data_packet;
-  meta_data_write(10 downto 0) <= packet_length_cnt;
 
   -- WRITE FSM STATES:
   -- IDLE: Nothing is happening
@@ -137,19 +139,20 @@ begin
   begin
     if rising_edge(clk) then
       if rst = '0' then
-        meta_data_write <= (others => '0');
+        write_data_meta <= (others => '0');
+        packet_length_cnt <= (others => '0');
         wr_en_packet <= '0';
         write_current_state <= IDLE;
         write_next_state <= IDLE;
-
       else
         write_data_in <= write_data;
+        write_data_in_prev <= write_data_in;
         wr_en_in <= wr_en;
         wr_en_in_prev <= wr_en_in;
         
         -- Update destination port register
         if dest_port_valid = '1' then
-          meta_data_write(14 downto 11) <= dest_port;
+          write_data_meta(14 downto 11) <= dest_port;
         end if;
         
         -- Standard FSM values
@@ -158,8 +161,8 @@ begin
 
         case write_current_state is
           when IDLE =>
-            if write_data_in = '1' and write_data_in_prev = '0' then
-              packet_length_cnt <= '1';
+            if (wr_en_in = '1' and wr_en_in_prev = '0') then
+              packet_length_cnt <= "00000000001";
               wr_en_packet <= '1';
               write_next_state <= WRITING;
             else
@@ -168,11 +171,12 @@ begin
             end if;
           
           when WRITING =>
-            if full_packet = '1' then
+            if almost_full_packet = '1' then
               wr_en_packet <= '0';
-              meta_data_write(15) <= '1';
+              write_data_meta(15) <= '1';
+              write_data_meta(10 downto 0) <= packet_length_cnt; -- should maybe be packet_length-cnt + 1
               write_next_state <= FULL_MID_WRITE;
-            elsif full_packet = '0' and (write_data_in = '0' and write_data_in_prev = '1') then
+            elsif almost_full_packet = '0' and (wr_en_in = '0' and wr_en_in_prev = '1') then
               wr_en_packet <= '0';
               write_next_state <= ERROR_CHECK;
             else
@@ -182,7 +186,7 @@ begin
             end if;
 
           when ERROR_CHECK =>
-            meta_data_write(15) <= error_data;
+            write_data_meta(15) <= error_data;
             wr_en_meta <= '1';
             write_next_state <= IDLE;
 
@@ -213,7 +217,10 @@ begin
   begin
     if rising_edge(clk) then
       if rst = '0' then
-        -- Reset stuff
+        out_data_valid <= '0';
+        send_request_out <= (others => '0');
+        packets_sent <= (others => '0');
+        packet_amount <= (others => '0');
       else
 
         send_request <= send_request_out;
@@ -235,7 +242,7 @@ begin
             end if;
 
           when READ_META =>
-            meta_data_hold <= read_data_meta;
+            --meta_data_hold <= read_data_meta;
             if read_data_meta(15) = '1' then -- Error found, delete from large fifo and return to idle
               jump_read_ptr_packet <= '1';
               jump_size_packet <= read_data_meta(10 downto 0);
@@ -249,8 +256,8 @@ begin
           when WAIT_FOR_ACK =>
             if send_request_out = request_ack then
               rd_en_packet <= '1';
-              packets_sent <= '1';
-              out_data_valid <= '1';
+              packets_sent <= "00000000001"; -- This should maybe be 0
+              out_data_valid <= '1'; -- This should maybe be 0
               read_next_state <= SEND_DATA;
             else
               read_next_state <= WAIT_FOR_ACK;
@@ -281,8 +288,8 @@ begin
     ADDR_WIDTH => 6
   )
   port map (
-    clk        => clk_meta,
-    rst        => rst_meta,
+    clk        => clk,
+    rst        => rst,
     wr_en      => wr_en_meta,
     write_data => write_data_meta,
     rd_en      => rd_en_meta,
@@ -298,15 +305,16 @@ begin
     ADDR_WIDTH => 12
   )
   port map (
-    clk           => clk_packet,
-    rst           => rst_packet,
-    wr_en_in      => wr_en_packet,
-    write_data_in => write_data_packet,
+    clk           => clk,
+    rst           => rst,
+    wr_en         => wr_en_packet, -- wr_en should maybe be wr_en_in
+    write_data => write_data_packet, -- write_data should maybe be write_data_in
     rd_en         => rd_en_packet,
     read_data     => read_data_packet,
     jump_read_ptr => jump_read_ptr_packet,
     jump_size     => jump_size_packet,
     full          => full_packet,
+    almost_full   => almost_full_packet,
     empty         => empty_packet
   );
 

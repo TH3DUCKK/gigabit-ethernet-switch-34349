@@ -9,6 +9,7 @@ use work.constants.all;
 -- This large FIFO holds data packets coming directly from the CRC.
 -- If an error is detected the data can be "deleted" from the FIFO
 -- by moving the read pointer past the error-filled data packet.
+-- almost_full signal goes high 1 clock cycle before the FIFO is full.
 -- NOTE: THIS HAS NO READ OR WRITE PROTECTION!
 
 entity sync_fifo_4096 is
@@ -35,6 +36,7 @@ entity sync_fifo_4096 is
 
     -- Status signals
     full          : out std_logic;
+    almost_full   : out std_logic;
     empty         : out std_logic
   );
 end entity sync_fifo_4096;
@@ -109,8 +111,9 @@ begin
   wr_addr <= wr_ptr(ADDR_WIDTH-1 downto 0);
   rd_addr <= rd_ptr(ADDR_WIDTH-1 downto 0);
 
-  -- Full and empty
+  -- full, almost_full and empty signals
   full  <= '1' when (not (wr_ptr(ADDR_WIDTH)) & wr_ptr(ADDR_WIDTH - 1 downto 0)) = rd_ptr else '0';
+  almost_full  <= '1' when (not (wr_ptr(ADDR_WIDTH)) & (wr_ptr(ADDR_WIDTH - 1 downto 0) - 1)) = rd_ptr else '0';
   empty <= '1' when wr_ptr = rd_ptr else '0';
 
 end architecture rtl;
