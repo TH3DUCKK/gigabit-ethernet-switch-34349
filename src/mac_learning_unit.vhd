@@ -55,6 +55,9 @@ architecture rtl of mac_learning_unit is
 
   -- Wires
 
+  --dest_port_reg enable signal
+  signal dest_port_reg_enable : std_logic;
+
   -- Outputs from the MAC RAM and signals to get the port and MAC information
   signal port_memory : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal mac_memory  : std_logic_vector(MAC_SIZE - 1 downto 0);
@@ -70,7 +73,11 @@ begin
         dest_port_reg <= (others => '0');
       else
         state         <= state_next;
-        dest_port_reg <= dest_port_reg_next;
+        if dest_port_reg_enable = '1' then
+          dest_port_reg <= dest_port_reg_next;
+        else
+          dest_port_reg <= dest_port_reg; -- Hold the value if not enabled (to handle having regs on MAC RAM inputs and outputs)
+        end if;
       end if;
     end if;
   end process;
