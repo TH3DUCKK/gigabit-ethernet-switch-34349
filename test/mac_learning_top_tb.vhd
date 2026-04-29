@@ -31,11 +31,11 @@ architecture tb of mac_learning_top_tb is
   -- Signal declarations
   signal clk        : std_logic := '0';
   signal rst        : std_logic := '0';
-  signal source_mac : std_logic_vector(47 downto 0);
-  signal src_port   : std_logic_vector(3 downto 0);
+  signal source_mac : std_logic_vector(MAC_SIZE - 1 downto 0);
+  signal src_port   : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal valid      : std_logic := '0';
-  signal dest_mac   : std_logic_vector(47 downto 0);
-  signal dest_port  : std_logic_vector(3 downto 0);
+  signal dest_mac   : std_logic_vector(MAC_SIZE - 1 downto 0);
+  signal dest_port  : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal ready      : std_logic;
 
   constant CLK_PERIOD : time := 10 ns;
@@ -43,15 +43,16 @@ architecture tb of mac_learning_top_tb is
 begin
   -- Instantiate the unit under test
   dut : mac_learning_top
-  port map (
-  clk        => clk,
-  rst        => rst,
-  valid      => valid,
-  src_port   => src_port,
-  source_mac => source_mac,
-  dest_mac   => dest_mac,
-  ready      => ready,
-  dest_port  => dest_port
+  port map
+  (
+    clk        => clk,
+    rst        => rst,
+    valid      => valid,
+    src_port   => src_port,
+    source_mac => source_mac,
+    dest_mac   => dest_mac,
+    ready      => ready,
+    dest_port  => dest_port
   );
 
   -- Clock generation
@@ -66,7 +67,7 @@ begin
     dest_mac   <= (others => '0');
     src_port   <= (others => '0');
     valid      <= '0';
-    test_state  <= INIT;
+    test_state <= INIT;
 
     -- Reset
     rst <= '1';
@@ -75,17 +76,18 @@ begin
     wait for CLK_PERIOD;
 
     -- Test case 1: Learn a MAC address
-    test_state  <= TEST1;
+    test_state <= TEST1_LEARN;
     source_mac <= x"001122334455";
     src_port   <= "0001";
     valid      <= '1';
     wait until ready = '1';
     valid <= '0'; -- Deassert valid after the first transaction
-    wait for CLK_PERIOD;
+    wait for CLK_PERIOD * 2;
 
-    valid <= '1';
-    dest_mac <= x"001122334455";
-    wait until ready = '1'; 
+    test_state <= TEST1_LOOKUP;
+    valid      <= '1';
+    dest_mac   <= x"001122334455";
+    wait until ready = '1';
     assert (dest_port = "0001")
     report "Test case 1: Look up learned address - Expected dest_port = 0001, got " & integer'image(to_integer(unsigned(dest_port)))
       severity FAILURE;
@@ -101,24 +103,26 @@ begin
     valid <= '0'; -- Deassert valid after the first transaction
     wait for CLK_PERIOD;
 
-    valid <= '1';
-    dest_mac <= x"aabbccddeeff";
-    wait until ready = '1'; 
+    test_state <= TEST2_LOOKUP;
+    valid      <= '1';
+    dest_mac   <= x"aabbccddeeff";
+    wait until ready = '1';
     assert (dest_port = "0010")
-    report "Test case 2: Look up learned address - Expected dest_port = 0010, got " & integer'image(to_integer(unsigned(dest_port)))
+    report "Test case 2: Look up learned address - Expected dest_port = 0010, got " & to_string(dest_port)
       severity FAILURE;
     valid <= '0';
     wait for CLK_PERIOD * 2;
 
     -- Test case 3: Look up an unknown address
-    test_state  <= TEST3;
-    valid <= '1';
-    dest_mac <= x"112233445566";
-    src_port <= "0001"; -- Source port should not be flooded back
+    test_state <= TEST3_LOOKUP;
+    valid      <= '1';
+    dest_mac   <= x"112233445566";
+    src_port   <= "0001"; -- Source port should not be flooded back
     wait until ready = '1';
     assert (dest_port = "1110")
-    report "Test case 3: Look up unknown address - Expected dest_port = 1110, got " & integer'image(to_integer(unsigned(dest_port)))
+    report "Test case 3: Look up unknown address - Expected dest_port = 1110, got " & to_string(dest_port)
       severity FAILURE;
+
     wait for CLK_PERIOD * 5;
     assert (dest_port = "1110")
     report "Test case 3: Look up unknown address and holding until ready low - Expected dest_port = 1110, got " & integer'image(to_integer(unsigned(dest_port)))
