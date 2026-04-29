@@ -40,9 +40,11 @@ begin
     if rst = '1' then
       state <= IDLE;
       addr  <= (others => '0');
+      timer <= (others => '0');
     elsif rising_edge(clk) then
       state <= state_next;
       addr  <= addr_next;
+      timer <= timer_next;
     end if;
   end process;
 
