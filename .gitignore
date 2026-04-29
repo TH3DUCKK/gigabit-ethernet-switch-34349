@@ -6,3 +6,9 @@ incremental_db/
 *.qws
 *.rpt
 *.summary
+
+# Python virtual environment
+.venv/
+
+# Generated files
+test_vectors/
