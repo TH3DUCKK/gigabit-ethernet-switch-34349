@@ -87,11 +87,10 @@ begin
     -- Check for packets coming in at the same time on multiple ports
     -- Check for congestion i.e. overloading one port
     -- Check for heavy loads, lots of packets from lots of ports.
-    -- Check for edge case of having only unique mac addresses in packets.
     -- Check for handling of fifo filling up because of big packets
     -- Check for primarily big packets
     -- Check for primarily small packets
-    -- 
+    -- Check for edge case of having only unique mac addresses in packets.
 
 
   end process;
