@@ -21,6 +21,7 @@ entity Round_Robin is
 		empty 		: in std_logic_vector(NUM_PORTS - 1 downto 0); -- empty signal from fifos
 		frame_done 	: in std_logic_vector(NUM_PORTS - 1 downto 0); -- end of frame
 		read_en 	: out std_logic_vector(NUM_PORTS - 1 downto 0);
+		read_en_oneshot	: out std_logic_vector(NUM_PORTS - 1 downto 0); 
 		
 		sel 		: out std_logic_vector(NUM_PORTS_WIDTH - 1 downto 0)
 	); 
@@ -31,7 +32,8 @@ architecture rtl of Round_Robin is
 	
 	signal count_int 	: std_logic_vector(NUM_PORTS_WIDTH - 1  downto 0); 
 	signal count_int_hot 	: std_logic_vector(NUM_PORTS - 1 downto 0);  
-	signal count_en	 	: std_logic;  
+	signal count_en	 	: std_logic; 
+	signal read_en_flag	: std_logic; 
 
 begin
 
@@ -69,6 +71,22 @@ begin
 			end if; 
 		end if; 
 	end process count; 
+
+
+	Oneshot_read_enable : process (clock)
+		if rising_edge(clk) then
+			if read_en = '1' and read_en_flag = '0' then
+				read_en_oneshot <= '1'; 
+				read_en_flag <= '1'; 
+			elsif  read_en = '0' then
+				read_en_flag <= '0';
+			end if; 
+			if read_en_flag <= '1' then 
+			 	read_en_oneshot <= '0'; 
+			end if; 
+		end if; 
+	end process;
+
 
 	read_en <= count_int_hot and not empty; 
 	sel <= count_int; 

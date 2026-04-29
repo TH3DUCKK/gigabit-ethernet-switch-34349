@@ -11,20 +11,20 @@ entity fifo is
     );
     port (
         -- Clocks and reset
-        clk    : in std_logic;
-        rst    : in std_logic;
+        clk    		: in std_logic;
+        rst    		: in std_logic;
 
         -- Write side
-        wr_data      : in std_logic_vector(7 downto 0);
-        write_enable : in std_logic;
-        full         : out std_logic;
+        wr_data      	: in std_logic_vector(7 downto 0);
+        write_enable 	: in std_logic;
+        full         	: out std_logic;
 
         -- Read side
-        rd_data      : out std_logic_vector(7 downto 0);
-        read_enable  : in std_logic;
-        empty        : out std_logic
-
-       
+        rd_data      	: out std_logic_vector(7 downto 0);
+        read_enable  	: in std_logic;
+        empty        	: out std_logic;
+	fifo_wptr	: out std_logic_vector(ADDR_WIDTH downto 0); 
+	fifo_rptr	: out std_logic_vector(ADDR_WIDTH downto 0)
     );
 end entity fifo;
 
@@ -96,7 +96,7 @@ begin
     begin
         if rising_edge(clk) then
             if rst = '1' then
-                --rd_en_internal <= '0';
+    
                 rptr <= (others => '0');
               
             else
@@ -104,25 +104,24 @@ begin
                 if read_enable = '1' and empty_internal = '0' then
                     --rd_en_internal <= '1';
                     rptr <= rptr + 1;
-                else
-                    --rd_en_internal <= '0';
+                
                 end if;
-
-                --if rd_en_internal = '1' then
-                --    rptr <= rptr + 1;
-                --end if;
-
-             
             end if;
 
         end if;
     end process;
 
     	-- Full and empty signals
+	process (clk) 
+	begin 
+		if rising_edge(clk) then
+			full <= full_internal;
+			empty <= empty_internal;	
+		end if; 
+	end process; 
+
 	full_internal <= '1' when (not (wptr(ADDR_WIDTH)) & wptr(ADDR_WIDTH - 1 downto 0)) = rptr else '0'; 
-	full <= full_internal;
  	empty_internal <= '1' when wptr = rptr else '0';
-	empty <= empty_internal;
 
 
 	waddr <= wptr(ADDR_WIDTH-1 downto 0);
@@ -130,6 +129,9 @@ begin
 
 	wen <= write_enable and not full_internal;
 	ren <= read_enable and not empty_internal;
+	
+	fifo_wptr <= wptr; 
+	fifo_rptr <= rptr; 
   
 
 end architecture rtl;

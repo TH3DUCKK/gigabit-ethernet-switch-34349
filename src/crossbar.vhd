@@ -35,11 +35,38 @@ architecture rtl of crossbar is
 	signal read_fifo  : std_logic; 
 	signal empty_con  : std_logic; 
 	
-	component fifo_mem
+	component fifo
 		
 	generic (
         	DATA_WIDTH : integer := 8;
         	ADDR_WIDTH : integer := 12
+    	);
+
+    	port (
+       		-- Clocks and reset
+        	clk_wr : in std_logic;
+        	clk_rd : in std_logic;
+        	rst    : in std_logic;
+
+        	-- Write side
+        	wr_data      : in std_logic_vector(7 downto 0);
+        	write_enable : in std_logic;
+        	full         : out std_logic;
+
+        	-- Read side
+        	rd_data      : out std_logic_vector(7 downto 0);
+        	read_enable  : in std_logic;
+        	empty        : out std_logic; 
+		fifo_wptr	: out std_logic_vector(ADDR_WIDTH downto 0); 
+		fifo_rptr	: out std_logic_vector(ADDR_WIDTH downto 0)
+   	);	
+
+
+	component Meta_data_fifo
+		
+	generic (
+        	DATA_WIDTH : integer := 16;
+        	ADDR_WIDTH : integer := 6
     	);
 
     	port (
@@ -74,7 +101,7 @@ architecture rtl of crossbar is
 
 	begin
 
-	fifo_mem_inst : fifo_mem
+	fifo_mem_inst : fifo
 		port map(
 			clk_wr => clk, 
 			clk_rd => clk, 
@@ -87,6 +114,20 @@ architecture rtl of crossbar is
 			empty => 	
 		);
 
+	Meta_data_fifo_inst : Meta_data_fifo
+		port map(
+			clk_wr => clk, 
+			clk_rd => clk, 
+			rst => rst,
+			wr_data => input_data,
+			write_enable => input_valid,
+			full =>
+			rd_data => output_data,
+			read_enable => 
+			empty => 	
+		);
+
+	
 	Round_Robin_inst : Round_Robin
 		port map(
 			clock => clk,
@@ -97,6 +138,7 @@ architecture rtl of crossbar is
 			sel => output_sel
 		); 
 
+end architecture rtl; 
 
 
 
