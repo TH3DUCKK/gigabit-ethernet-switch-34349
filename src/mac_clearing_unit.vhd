@@ -30,6 +30,7 @@ architecture rtl of mac_clearing_unit is
 
   signal state, state_next : state_type;
   signal addr, addr_next   : unsigned(MAC_RAM_SIZE_BITS - 1 downto 0);
+  signal timer, timer_next : unsigned(integer(ceil(log2(real(MAC_AGE_CLOCK_DIVISION)))) downto 0); -- Timer to divide the clock (HOLY ONELINER)
 
 begin
   process (clk, rst)
@@ -43,33 +44,39 @@ begin
     end if;
   end process;
 
-  process (state, addr, data_in)
+  process (state, addr, data_in, timer)
   begin
     state_next <= state;
     addr_next  <= addr;
+    timer_next <= timer;
     address    <= std_logic_vector(addr);
     wren       <= '0';
     data_out   <= (others => '0');
 
     case state is
       when IDLE =>
-        state_next <= READ_AGE;
+        if timer >= MAC_AGE_CLOCK_DIVISION then
+          state_next <= READ_AGE;
+          timer_next <= (others => '0');
+        else
+          timer_next <= timer + 1;
+          state_next <= IDLE;
+        end if;
 
       when READ_AGE =>
         state_next <= WRITE_AGE;
 
       when WRITE_AGE =>
-        data_out <= data_in + 1;
-        if (data_in = std_logic_vector(to_unsigned(MAC_AGE_MAX, data_in'length))) and
-          std_logic_vector(addr) /= source_mac(MAC_RAM_SIZE_BITS - 1 downto 0) then
-
-          wren       <= '1';
-          addr_next  <= addr + 1;
-          state_next <= READ_AGE;
+        timer_next <= (others => '0');
+        data_out   <= data_in + 1;
+        addr_next  <= addr + 1;
+        state_next <= IDLE;
+        -- Check if the age has reached the maximum age and check if the MAC learning unit is not working on the same entry
+        if (data_in(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0) /= std_logic_vector(to_unsigned(MAC_AGE_MAX, integer(ceil(log2(real(MAC_AGE_MAX))))))) and 
+            std_logic_vector(addr) /= source_mac(MAC_RAM_SIZE_BITS - 1 downto 0) then
+          wren <= '1';
         else
-          wren       <= '0';
-          addr_next  <= addr;
-          state_next <= WRITE_AGE;
+          wren <= '0';
         end if;
     end case;
   end process;
