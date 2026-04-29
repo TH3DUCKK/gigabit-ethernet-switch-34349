@@ -15,6 +15,11 @@ package constants is
   -- MAC learning unit constants
   constant MAC_RAM_SIZE_BITS : integer := 13; -- Number of entries in the MAC RAM
   constant MAC_WORD_SIZE : integer := 64; -- Size of each entry in bits (48 bits for MAC + 4 bits for port + padding)
-  constant MAC_AGE_MAX : integer := 255; -- (time in seconds = MAC_AGE_MAX * (freq / 2 * 8192))
+  
+  -- BOTH SHOULD BE UPDATED AT THE SAME TIME
+  constant MAC_AGE_MAX : integer := 300; -- time in seconds = (2**MAC_RAM_SIZE_BITS * MAC_AGE_CLOCK_DIVISION * 4) / freq
+  constant MAC_AGE_CLOCK_DIVISION : integer := 1144408; -- MAC_AGE_CLOCK_DIVISION = MAC_AGE_MAX / (2**MAC_RAM_SIZE_BITS * 4 * freq)
+  --constant MAC_AGE_MAX : integer := 5; -- Testing value
+  --constant MAC_AGE_CLOCK_DIVISION : integer := 1; -- Testing value
 
 end package constants;
