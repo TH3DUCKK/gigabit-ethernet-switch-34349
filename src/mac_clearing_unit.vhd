@@ -26,7 +26,7 @@ entity mac_clearing_unit is
 end entity mac_clearing_unit;
 
 architecture rtl of mac_clearing_unit is
-  type state_type is (IDLE, READ_AGE, WRITE_AGE);
+  type state_type is (IDLE, READ_AGE, WAIT_AGE, WRITE_AGE);
 
   signal state, state_next : state_type;
   signal addr, addr_next   : unsigned(MAC_RAM_SIZE_BITS - 1 downto 0);
@@ -64,6 +64,8 @@ begin
         end if;
 
       when READ_AGE =>
+        state_next <= WAIT_AGE;
+      when WAIT_AGE =>
         state_next <= WRITE_AGE;
 
       when WRITE_AGE =>
