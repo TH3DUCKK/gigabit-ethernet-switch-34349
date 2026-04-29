@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use IEEE.math_real.LOG2;
+use IEEE.math_real.CEIL;
 
 use work.constants.all;
 
@@ -67,7 +69,6 @@ begin
         state_next <= WAIT_AGE;
       when WAIT_AGE =>
         state_next <= WRITE_AGE;
-
       when WRITE_AGE =>
         timer_next <= (others => '0');
         data_out   <= data_in + 1;
