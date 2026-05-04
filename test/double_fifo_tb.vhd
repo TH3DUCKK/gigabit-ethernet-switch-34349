@@ -31,14 +31,21 @@ architecture sim of double_fifo_tb is
   signal send_request    : std_logic_vector(NUM_PORTS-1 downto 0);
   signal packet_data     : std_logic_vector(BITS_PER_PORT-1 downto 0);
 
+  -- Testbench organisation
+  type test_state_t is (
+    RESET,
+    WRITING,
+    READING,
+    ERROR_PACKET,
+    WAITING
+  );
+
+  signal test_state : test_state_t := RESET;
+
 begin
 
   -- DUT Instantiation
   dut : entity work.double_fifo
-    generic map (
-      DATA_WIDTH => BITS_PER_PORT,
-      NUM_PORTS  => NUM_PORTS
-    )
     port map (
       clk             => clk,
       rst             => rst,
@@ -56,7 +63,7 @@ begin
       packet_data     => packet_data
     );
 
-  -- Clock Generation
+  -- Clock generation
   clk_process : process
   begin
     while true loop
@@ -68,7 +75,7 @@ begin
     end loop;
   end process;
 
-  -- Reset Generation
+  -- Reset generation
   rst_process : process
   begin
     rst <= '0';
@@ -78,7 +85,7 @@ begin
     wait;
   end process;
 
-  -- Stimulus Process
+  -- Stimulus process
   stim_proc : process
   begin
 
@@ -86,45 +93,61 @@ begin
     wait until rst = '1';
     wait until rising_edge(clk);
 
-    -- Example Packet Write
-    wr_en           <= '1';
-    write_data      <= "01010101";
-    error_data      <= '0';
+    -- Write 
+    test_state <= WRITING;
+    for i in 0 to 127 loop -- packet size 128
+      wr_en      <= '1';
+      write_data <= "01010101";
+      if i = 120 then
+        -- Setting destination
+        dest_port       <= "0001";
+        dest_port_valid <= '1';
+      else
+        dest_port       <= "0000";
+        dest_port_valid <= '0';
+      end if;
+      wait until rising_edge(clk);
+    end loop;
 
-    dest_port       <= "0001";
-    dest_port_valid <= '1';
-
+    -- Stop writing
+    wr_en <= '0';
     wait until rising_edge(clk);
 
-    wr_en           <= '0';
-    dest_port_valid <= '0';
+    -- Wait before sending acknowledge
+    wait for 10 * CLK_PERIOD;
 
-    -- Simulate request acknowledge
-    wait for 5 * CLK_PERIOD;
-
+    -- Send 1 cycle acknowledge
+    test_state <= READING;
+    wait until rising_edge(clk);
     request_ack <= "0001";
-
     wait until rising_edge(clk);
-
     request_ack <= (others => '0');
 
-    -- Example Error Packet
-    wait for 5 * CLK_PERIOD;
-
-    wr_en           <= '1';
-    write_data      <= "10101010";
-    error_data      <= '1';
-
-    dest_port       <= "0010";
-    dest_port_valid <= '1';
-
     wait until rising_edge(clk);
+    wait for 127 * CLK_PERIOD;
 
-    wait for 1 * CLK_PERIOD;
+    -- Write error packet
+    test_state <= ERROR_PACKET;
+    for i in 0 to 63 loop -- packet size 64
+      wr_en      <= '1';
+      write_data <= "11110000";
+      if i = 50 then
+        -- Setting destination
+        dest_port       <= "0001";
+        dest_port_valid <= '1';
+      else
+        dest_port       <= "0000";
+        dest_port_valid <= '0';
+      end if;
+      wait until rising_edge(clk);
+    end loop;
 
-    wr_en           <= '0';
-    dest_port_valid <= '0';
-    error_data      <= '0';
+    -- Stop writing and flag error
+    wr_en <= '0';
+    error_data <= '1';
+    wait until rising_edge(clk);
+    error_data <= '0';
+    wait until rising_edge(clk);
 
     -- End Simulation
     wait for 20 * CLK_PERIOD;
