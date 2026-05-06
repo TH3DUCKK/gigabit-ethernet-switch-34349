@@ -25,7 +25,6 @@ entity data_parking is
     output_valid : out std_logic_vector(VALID_BITS - 1 downto 0);
     -- Mac inputs
     ready           : in std_logic;
-    input_valid_mac : in std_logic;
     dest_port       : in std_logic_vector(NUM_PORTS - 1 downto 0); -- One bit per port
     -- Mac outputs
     output_valid_mac : out std_logic;
