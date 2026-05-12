@@ -29,6 +29,7 @@ entity double_fifo is
     request_ack     : in  std_logic_vector(NUM_PORTS-1 downto 0);
     out_data_valid  : out std_logic;
     send_request    : out std_logic_vector(NUM_PORTS-1 downto 0);
+    request_size    : out std_logic_vector(10 downto 0);
     packet_data     : out std_logic_vector(BITS_PER_PORT-1 downto 0)
   );
 end entity double_fifo;
@@ -47,6 +48,7 @@ architecture rtl of double_fifo is
   signal packets_sent     : std_logic_vector(10 downto 0);
   signal packet_amount    : std_logic_vector(10 downto 0);
   signal send_request_out : std_logic_vector(NUM_PORTS-1 downto 0);
+  signal sent_request     : std_logic_vector(NUM_PORTS-1 downto 0);
 
   -- FSM signals
   type write_state_type is (IDLE, WRITING, ERROR_CHECK, FULL_MID_WRITE, STILL_FULL);
@@ -120,6 +122,7 @@ architecture rtl of double_fifo is
 begin
 
   packet_data <= read_data_packet;
+  request_size <= packet_amount;
 
   -- WRITE FSM STATES:
   -- IDLE: Nothing is happening
@@ -215,6 +218,7 @@ begin
       if rst = '0' then
         out_data_valid <= '0';
         send_request_out <= (others => '0');
+        sent_request <= (others => '0');
         packets_sent <= (others => '0');
         packet_amount <= (others => '0');
         read_state <= IDLE;
@@ -248,16 +252,18 @@ begin
               read_state <= IDLE;
             else
               send_request_out <= read_data_meta(14 downto 11);
+              sent_request <= read_data_meta(14 downto 11);
               packet_amount <= read_data_meta(10 downto 0);
               read_state <= WAIT_FOR_ACK;
             end if;
           
           when WAIT_FOR_ACK =>
-            if send_request_out = request_ack then
+            if sent_request = request_ack then
               rd_en_packet <= '1';
               packets_sent <= "00000000000";
               read_state <= SEND_DATA;
             else
+              send_request_out <= (others => '0');
               read_state <= WAIT_FOR_ACK;
             end if;
           
