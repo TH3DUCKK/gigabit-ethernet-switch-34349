@@ -6,6 +6,7 @@ incremental_db/
 *.qws
 *.rpt
 *.summary
+*.bak
 
 # Python virtual environment
 .venv/
