@@ -27,7 +27,7 @@ entity double_fifo is
 
     -- Request to send
     request_ack     : in  std_logic_vector(NUM_PORTS-1 downto 0);
-    out_data_valid  : out std_logic;
+    out_data_valid  : out std_logic_vector(NUM_PORTS-1 downto 0); -- changed
     send_request    : out std_logic_vector(NUM_PORTS-1 downto 0);
     request_size    : out std_logic_vector(10 downto 0);
     packet_data     : out std_logic_vector(BITS_PER_PORT-1 downto 0)
@@ -49,6 +49,7 @@ architecture rtl of double_fifo is
   signal packet_amount    : std_logic_vector(10 downto 0);
   signal send_request_out : std_logic_vector(NUM_PORTS-1 downto 0);
   signal sent_request     : std_logic_vector(NUM_PORTS-1 downto 0);
+  signal internal_valid   : std_logic;
 
   -- FSM signals
   type write_state_type is (IDLE, WRITING, ERROR_CHECK, FULL_MID_WRITE, STILL_FULL);
@@ -123,6 +124,8 @@ begin
 
   packet_data <= read_data_packet;
   request_size <= packet_amount;
+
+  out_data_valid <= sent_request and "1111" when internal_valid = '1' else "0000"; -- Hotfix for valid outputs
 
   -- WRITE FSM STATES:
   -- IDLE: Nothing is happening
@@ -216,7 +219,7 @@ begin
   begin
     if rising_edge(clk) then
       if rst = '0' then
-        out_data_valid <= '0';
+        internal_valid <= '0';
         send_request_out <= (others => '0');
         sent_request <= (others => '0');
         packets_sent <= (others => '0');
@@ -270,16 +273,16 @@ begin
           when SEND_DATA =>
             if packets_sent = packet_amount then
               packets_sent <= (others => '0');
-              out_data_valid <= '0';
+              internal_valid <= '0';
               read_state <= IDLE;
             elsif packets_sent = (packet_amount - 1) then
               packets_sent <= packets_sent + 1;
-              out_data_valid <= '1';
+              internal_valid <= '1';
               rd_en_packet <= '0';
               read_state <= SEND_DATA;
             else
               packets_sent <= packets_sent + 1;
-              out_data_valid <= '1';
+              internal_valid <= '1';
               rd_en_packet <= '1';
               read_state <= SEND_DATA;
             end if;

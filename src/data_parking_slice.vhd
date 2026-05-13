@@ -41,7 +41,7 @@ entity data_parking_slice is
     crossbar_data         : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
     crossbar_request_size : out std_logic_vector(10 downto 0);
     crossbar_send_request : out std_logic_vector(NUM_PORTS - 1 downto 0);
-    crossbar_valid        : out std_logic
+    crossbar_valid        : out std_logic_vector(NUM_PORTS - 1 downto 0)
   );
 
 end entity data_parking_slice;
@@ -100,6 +100,9 @@ begin
         src_port <= SOURCE_PORT;
         dest_mac <= (others => '0');
         src_mac <= (others => '0');
+        output_valid_mac <= '0';
+        rdy_to_process <= '0';
+        processed <= '0';
       else
         output_valid_mac <= rdy_to_process and not(processed);
         input_valid_prev <= input_valid;
