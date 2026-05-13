@@ -14,7 +14,7 @@ architecture tb of switchcore_tb is
     port (
       -- Clock and reset
       clk : in std_logic;
-      rst : in std_logic;
+      reset : in std_logic;
 
       -- Activity indicators
       link_sync : in std_logic_vector(3 downto 0); -- High indicates a peer connection at the physical layer.
@@ -93,7 +93,7 @@ begin
   dut : switchcore
     port map (
       clk       => clk,
-      rst       => rst,
+      reset       => rst,
       link_sync => link_sync,
       -- Note on concatenation: port0_tx & port1_tx means port0 is in bits 31 downto 24
       tx_data   => port3_tx & port2_tx & port1_tx & port0_tx,
