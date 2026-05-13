@@ -64,7 +64,7 @@ begin
 		end if; 
 	end process seq; 
 
-	comp: process(state, empty, frame_done, count_int)-- check for all signals
+	comp: process(state, empty, frame_done, count_int, count_int_prev)
 	begin
 		case(state) is 
 			when ALL_EMPTY => 
