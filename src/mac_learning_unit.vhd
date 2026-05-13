@@ -67,7 +67,7 @@ begin
   process (clk, rst)
   begin
     if rising_edge(clk) then
-      if rst = '1' then
+      if rst = '0' then
         -- Reset logic
         state         <= IDLE;
         dest_port_reg <= (others => '0');

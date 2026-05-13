@@ -37,7 +37,7 @@ architecture rtl of mac_clearing_unit is
 begin
   process (clk, rst)
   begin
-    if rst = '1' then
+    if rst = '0' then
       state <= IDLE;
       addr  <= (others => '0');
       timer <= (others => '0');
