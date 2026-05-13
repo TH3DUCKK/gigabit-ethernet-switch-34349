@@ -30,10 +30,7 @@ architecture tb of switchcore_single_tb is
   signal clk       : std_logic                    := '0';
   signal rst       : std_logic                    := '0';
   signal link_sync : std_logic_vector(3 downto 0) := (others => '0');
-  signal port0_tx  : std_logic_vector(7 downto 0);
-  signal port1_tx  : std_logic_vector(7 downto 0);
-  signal port2_tx  : std_logic_vector(7 downto 0);
-  signal port3_tx  : std_logic_vector(7 downto 0);
+  signal tx_data   : std_logic_vector(31 downto 0);
   signal tx_ctrl   : std_logic_vector(3 downto 0);
   signal port0_rx  : std_logic_vector(7 downto 0);
   signal port1_rx  : std_logic_vector(7 downto 0);
@@ -41,7 +38,6 @@ architecture tb of switchcore_single_tb is
   signal port3_rx  : std_logic_vector(7 downto 0);
   signal rx_ctrl   : std_logic_vector(3 downto 0);
 
-  signal tx_ports : STD_LOGIC_VECTOR(31 downto 0);
 
   -- Test ip-packet
   constant DATA            : std_logic_vector(575 downto 0) := x"55555555555555D50010A47BEA8000123456789008004500002EB3FE000080110540C0A8002CC0A8000404000400001A2DE8000102030405060708090A0B0C0D0E0F1011E6C53DB2";
@@ -50,8 +46,6 @@ architecture tb of switchcore_single_tb is
 
 begin
 
-  tx_ports <= port3_tx & port2_tx & port1_tx & port0_tx;
-
   DUT : entity work.switchcore
     port map
     (
@@ -59,7 +53,7 @@ begin
       reset     => rst,
       link_sync => link_sync,
       -- Note on concatenation: port0_tx & port1_tx means port0 is in bits 31 downto 24
-      tx_data => tx_ports,
+      tx_data => tx_data,
       tx_ctrl => tx_ctrl,
       rx_data => port3_rx & port2_rx & port1_rx & port0_rx,
       rx_ctrl => rx_ctrl

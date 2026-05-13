@@ -13,7 +13,7 @@ entity crossbar_double_fifo is
 		meta_data_valid	: in std_logic; 
 		port_data_out	: out std_logic_vector( 7 downto 0); 
 		port_data_valid	: out std_logic;
-		enough_space	: out std_logic;
+		enough_space	: out std_logic := '0';
 		end_of_frame 	: out std_logic;
 		empty_frame_fifo: out std_logic; 
 		RR_read_enable : in std_logic

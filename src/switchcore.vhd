@@ -177,6 +177,12 @@ architecture arch of switchcore is
   signal cb_req_meta_valid_op1 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
   signal cb_req_meta_valid_op2 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
   signal cb_req_meta_valid_op3 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
+
+  -- Data parking transposed valid signal
+  signal dp_valid_transposed_0 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_valid_transposed_1 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_valid_transposed_2 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_valid_transposed_3 : std_logic_vector(NUM_PORTS - 1 downto 0);
   
   -- Data parking transposed full signal
   signal dp_space_ack_transposed_0 : std_logic_vector(NUM_PORTS - 1 downto 0);
@@ -193,6 +199,7 @@ architecture arch of switchcore is
   signal cb_out_val_2  : std_logic_vector(3 downto 0);
   signal cb_out_data_3 : std_logic_vector(7 downto 0);
   signal cb_out_val_3  : std_logic_vector(3 downto 0);
+  signal cb_out_conc   : std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
 
 begin
 
@@ -219,6 +226,12 @@ begin
   dp_space_ack_transposed_1 <= space_ack_3(1) & space_ack_2(1) & space_ack_1(1) & space_ack_0(1);
   dp_space_ack_transposed_2 <= space_ack_3(2) & space_ack_2(2) & space_ack_1(2) & space_ack_0(2);
   dp_space_ack_transposed_3 <= space_ack_3(3) & space_ack_2(3) & space_ack_1(3) & space_ack_0(3);
+
+  -- Transpose valid signals
+  dp_valid_transposed_0 <= dp_p3_val(0) & dp_p2_val(0) & dp_p1_val(0) & dp_p0_val(0);
+  dp_valid_transposed_1 <= dp_p3_val(1) & dp_p2_val(1) & dp_p1_val(1) & dp_p0_val(1);
+  dp_valid_transposed_2 <= dp_p3_val(2) & dp_p2_val(2) & dp_p1_val(2) & dp_p0_val(2);
+  dp_valid_transposed_3 <= dp_p3_val(3) & dp_p2_val(3) & dp_p1_val(3) & dp_p0_val(3);
 
   -- Map Crossbar Outputs to Switchcore Transmit Ports
   tx_data(7 downto 0)   <= cb_out_data_0;
@@ -311,7 +324,7 @@ begin
 
     -- PORT 0 DESTINATION
     frame_data_0       => cb_frame_data_all,
-    frame_data_valid_0 => dp_p0_val,
+    frame_data_valid_0 => dp_valid_transposed_0,
     meta_data_0        => cb_meta_data_all,
     meta_data_valid_0  => cb_req_meta_valid_op0,
     port_data_out_0    => cb_out_data_0,
@@ -320,7 +333,7 @@ begin
 
     -- PORT 1 DESTINATION
     frame_data_1       => cb_frame_data_all,
-    frame_data_valid_1 => dp_p1_val,
+    frame_data_valid_1 => dp_valid_transposed_1,
     meta_data_1        => cb_meta_data_all,
     meta_data_valid_1  => cb_req_meta_valid_op1,
     port_data_out_1    => cb_out_data_1,
@@ -329,7 +342,7 @@ begin
 
     -- PORT 2 DESTINATION
     frame_data_2       => cb_frame_data_all,
-    frame_data_valid_2 => dp_p2_val,
+    frame_data_valid_2 => dp_valid_transposed_2,
     meta_data_2        => cb_meta_data_all,
     meta_data_valid_2  => cb_req_meta_valid_op2,
     port_data_out_2    => cb_out_data_2,
@@ -338,7 +351,7 @@ begin
 
     -- PORT 3 DESTINATION
     frame_data_3       => cb_frame_data_all,
-    frame_data_valid_3 => dp_p3_val,
+    frame_data_valid_3 => dp_valid_transposed_3,
     meta_data_3        => cb_meta_data_all,
     meta_data_valid_3  => cb_req_meta_valid_op3,
     port_data_out_3    => cb_out_data_3,
