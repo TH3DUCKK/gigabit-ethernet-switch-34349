@@ -59,7 +59,7 @@ begin
 
     case state is
       when IDLE =>
-        if timer >= MAC_AGE_CLOCK_DIVISION then
+        if timer >= (MAC_AGE_CLOCK_DIVISION - 4) then
           state_next <= READ_AGE;
           timer_next <= (others => '0');
         else
