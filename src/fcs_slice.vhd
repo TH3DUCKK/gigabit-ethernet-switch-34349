@@ -31,9 +31,10 @@ architecture rtl of fcs_slice is
   signal preamble_cnt : std_logic_vector(2 downto 0)  := "000"; -- counter to track how many bytes to ignore at the start
 
   -- Registers for input data
-  signal data_in : std_logic_vector(7 downto 0) := "00000000";
-  signal valid_in : std_logic := '0'; -- signal storing valid input value
-  signal prev_valid_in : std_logic := '0'; -- signal storing previous valid input value
+  signal data_in       : std_logic_vector(7 downto 0) := "00000000";
+  signal prev_data_in  : std_logic_vector(7 downto 0) := "00000000";
+  signal valid_in      : std_logic := '0';
+  signal prev_valid_in : std_logic := '0';
 
   -- FSM related
   type state_t is (IDLE, PREAMBLE, PACKET_START, REST_OF_PACKET, EVAL_ERROR);
@@ -55,12 +56,13 @@ begin
       else
         -- putting inputs into registers
         data_in <= input_data;
+        prev_data_in <= data_in;
         valid_in <= input_valid;
         prev_valid_in <= valid_in;
         
         -- setting outputs
-        output_data <= data_in;
-        output_valid <= valid_in;
+        output_data <= prev_data_in;
+        output_valid <= prev_valid_in;
 
         -- default assignment (gets overwritten by the FSM below)
         output_error <= '0';
