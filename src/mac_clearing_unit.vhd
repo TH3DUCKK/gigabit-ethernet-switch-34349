@@ -48,7 +48,7 @@ begin
     end if;
   end process;
 
-  process (state, addr, data_in, timer)
+  process (state, addr, data_in, timer, source_mac)
   begin
     state_next <= state;
     addr_next  <= addr;
