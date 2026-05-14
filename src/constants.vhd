@@ -18,9 +18,8 @@ package constants is
   constant MAC_WORD_SIZE : integer := 64; -- Size of each entry in bits (48 bits for MAC + 4 bits for port + padding)
   
   -- BOTH SHOULD BE UPDATED AT THE SAME TIME
-  constant MAC_AGE_MAX : integer := 300; -- time in seconds = (2**MAC_RAM_SIZE_BITS * MAC_AGE_CLOCK_DIVISION * 4) / freq
-  constant MAC_AGE_CLOCK_DIVISION : integer := 1144408; -- MAC_AGE_CLOCK_DIVISION = MAC_AGE_MAX / (2**MAC_RAM_SIZE_BITS * 4 * freq)
-  --constant MAC_AGE_MAX : integer := 5; -- Testing value
+  constant MAC_AGE_MAX : integer := 300; -- time in seconds
+  constant MAC_AGE_CLOCK_DIVISION : integer := 15259; -- MAC_AGE_CLOCK_DIVISION = freq / (2**MAC_RAM_SIZE_BITS)
   --constant MAC_AGE_CLOCK_DIVISION : integer := 1; -- Testing value
 
 end package constants;
