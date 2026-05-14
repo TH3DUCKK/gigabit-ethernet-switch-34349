@@ -77,7 +77,7 @@ begin
         addr_next  <= addr + 1;
         state_next <= IDLE;
         -- Check if the age has reached the maximum age and check if the MAC learning unit is not working on the same entry
-        if (data_in(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0) /= std_logic_vector(to_unsigned(MAC_AGE_MAX, integer(ceil(log2(real(MAC_AGE_MAX))))))) and 
+          if (data_in(MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS - 1 downto 0) /= std_logic_vector(to_unsigned(MAC_AGE_MAX, MAC_WORD_SIZE - MAC_SIZE - NUM_PORTS))) and 
             std_logic_vector(addr) /= source_mac(MAC_RAM_SIZE_BITS - 1 downto 0) then
           wren <= '1';
         else
