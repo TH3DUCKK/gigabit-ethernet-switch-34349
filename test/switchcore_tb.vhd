@@ -31,10 +31,7 @@ architecture tb of switchcore_tb is
   signal clk       : std_logic := '0';
   signal rst       : std_logic := '0';
   signal link_sync : std_logic_vector(3 downto 0) := (others => '0');
-  signal port0_tx : std_logic_vector(7 downto 0);
-  signal port1_tx : std_logic_vector(7 downto 0);
-  signal port2_tx : std_logic_vector(7 downto 0);
-  signal port3_tx : std_logic_vector(7 downto 0);
+  signal tx_data : STD_LOGIC_VECTOR(31 downto 0);
   signal tx_ctrl : std_logic_vector(3 downto 0);
   signal port0_rx : std_logic_vector(7 downto 0);
   signal port1_rx : std_logic_vector(7 downto 0);
@@ -42,10 +39,12 @@ architecture tb of switchcore_tb is
   signal port3_rx : std_logic_vector(7 downto 0);
   signal rx_ctrl : std_logic_vector(3 downto 0);
 
+  signal rx_data : STD_LOGIC_VECTOR(31 downto 0);
+
   constant CLK_PERIOD : time := 10 ns;
 
 -- Test Selection (Change this to run different tests)
-  constant G_TEST_FILE : string := "test_vectors/test_standard_transmission.txt";
+  constant G_TEST_FILE : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_standard_transmission.txt";
 
   -- ==========================================
   -- Sequencer / Driver Communication Signals
@@ -89,6 +88,7 @@ begin
   port1_rx <= rx_data_arr(1);
   port2_rx <= rx_data_arr(2);
   port3_rx <= rx_data_arr(3);
+  rx_data <= port3_rx & port2_rx & port1_rx & port0_rx;
 
   dut : switchcore
     port map (
@@ -96,9 +96,9 @@ begin
       reset       => rst,
       link_sync => link_sync,
       -- Note on concatenation: port0_tx & port1_tx means port0 is in bits 31 downto 24
-      tx_data   => port3_tx & port2_tx & port1_tx & port0_tx,
+      tx_data   => tx_data,
       tx_ctrl   => tx_ctrl,
-      rx_data   => port3_rx & port2_rx & port1_rx & port0_rx,
+      rx_data   => rx_data,
       rx_ctrl   => rx_ctrl
     );
 
@@ -121,9 +121,9 @@ begin
   begin
       -- 1. Initialize Switch
       link_sync <= "0000";
-      rst <= '1';
-      wait for CLK_PERIOD * 2;
       rst <= '0';
+      wait for CLK_PERIOD * 2;
+      rst <= '1';
       wait for CLK_PERIOD;
       
       -- Set Links to UP
