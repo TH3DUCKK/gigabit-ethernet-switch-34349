@@ -101,10 +101,10 @@ begin
     if rising_edge(clk) then
       if rst = '0' then
         -- Reset logic
-        p0_src_port <= "0001";
-        p1_src_port <= "0010";
-        p2_src_port <= "0100";
-        p3_src_port <= "1000";
+--        p0_src_port <= "0001";
+--        p1_src_port <= "0010";
+--        p2_src_port <= "0100";
+--        p3_src_port <= "1000";
 
         round_robin <= PORT0;
       else

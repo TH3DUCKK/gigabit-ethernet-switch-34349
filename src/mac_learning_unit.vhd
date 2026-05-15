@@ -82,7 +82,7 @@ begin
     end if;
   end process;
 
-  process (valid, src_port, source_mac, dest_mac, data_in, clk, dest_port_reg_enable, port_memory, mac_memory, mac_age, state, dest_port_reg, wren)
+  process (valid, src_port, source_mac, dest_mac, data_in, clk, dest_port_reg_enable, port_memory, mac_memory, mac_age, state, dest_port_reg)
   begin
     -- Default outputs
     state_next         <= state;
