@@ -76,9 +76,9 @@ begin
     test_state <= INIT;
 
     -- Reset
-    rst <= '1';
-    wait for CLK_PERIOD * 2;
     rst <= '0';
+    wait for CLK_PERIOD * 2;
+    rst <= '1';
     wait for CLK_PERIOD;
 
     -- Test case 1: Learn a MAC address
