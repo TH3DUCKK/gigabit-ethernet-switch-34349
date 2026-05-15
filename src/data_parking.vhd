@@ -92,7 +92,7 @@ architecture rtl of data_parking is
   signal p3_src_port         : std_logic_vector(NUM_PORTS - 1 downto 0);
 
   -- FSM signals
-  type round_robin_type is (PORT0, PORT1, PORT2, PORT3);
+  type round_robin_type is (PORT0, PORT0_WAIT, PORT1, PORT1_WAIT, PORT2, PORT2_WAIT, PORT3, PORT3_WAIT);
   signal round_robin : round_robin_type;
 
 begin
@@ -100,12 +100,7 @@ begin
   begin
     if rising_edge(clk) then
       if rst = '0' then
-        -- Reset logic
---        p0_src_port <= "0001";
---        p1_src_port <= "0010";
---        p2_src_port <= "0100";
---        p3_src_port <= "1000";
-
+        -- Reset logicS
         round_robin <= PORT0;
       else
 
@@ -125,12 +120,12 @@ begin
               p0_ready <= ready;
               p0_dest_port <= dest_port;
 
-              output_valid_mac <= p1_output_valid_mac;
+              output_valid_mac <= '0';
               dest_mac         <= p1_dest_mac;
               source_mac       <= p1_source_mac;
               src_port         <= p1_src_port;
 
-              round_robin <= PORT1;
+              round_robin <= PORT0_WAIT;
             elsif (p0_output_valid_mac = '1') then
               output_valid_mac <= p0_output_valid_mac;
               dest_mac         <= p0_dest_mac;
@@ -146,18 +141,21 @@ begin
 
               round_robin <= PORT1;
             end if;
+
+          when PORT0_WAIT =>
+            round_robin <= PORT1;
           
           when PORT1 =>
             if (ready = '1') then
               p1_ready <= ready;
               p1_dest_port <= dest_port;
 
-              output_valid_mac <= p2_output_valid_mac;
+              output_valid_mac <= '0';
               dest_mac         <= p2_dest_mac;
               source_mac       <= p2_source_mac;
               src_port         <= p2_src_port;
 
-              round_robin <= PORT2;
+              round_robin <= PORT1_WAIT;
             elsif (p1_output_valid_mac = '1') then
               output_valid_mac <= p1_output_valid_mac;
               dest_mac         <= p1_dest_mac;
@@ -173,18 +171,21 @@ begin
 
               round_robin <= PORT2;
             end if;
+          
+          when PORT1_WAIT =>
+            round_robin <= PORT2;
 
           when PORT2 =>
             if (ready = '1') then
               p2_ready <= ready;
               p2_dest_port <= dest_port;
 
-              output_valid_mac <= p3_output_valid_mac;
+              output_valid_mac <= '0';
               dest_mac         <= p3_dest_mac;
               source_mac       <= p3_source_mac;
               src_port         <= p3_src_port;
 
-              round_robin <= PORT3;
+              round_robin <= PORT2_WAIT;
             elsif (p2_output_valid_mac = '1') then
               output_valid_mac <= p2_output_valid_mac;
               dest_mac         <= p2_dest_mac;
@@ -201,17 +202,20 @@ begin
               round_robin <= PORT3;
             end if;
 
+          when PORT2_WAIT =>
+            round_robin <= PORT3;
+
           when PORT3 =>
             if (ready = '1') then
               p3_ready <= ready;
               p3_dest_port <= dest_port;
 
-              output_valid_mac <= p0_output_valid_mac;
+              output_valid_mac <= '0';
               dest_mac         <= p0_dest_mac;
               source_mac       <= p0_source_mac;
               src_port         <= p0_src_port;
 
-              round_robin <= PORT0;
+              round_robin <= PORT3_WAIT;
             elsif (p3_output_valid_mac = '1') then
               output_valid_mac <= p3_output_valid_mac;
               dest_mac         <= p3_dest_mac;
@@ -226,7 +230,10 @@ begin
               src_port         <= p0_src_port;
 
               round_robin <= PORT0;
-            end if;          
+            end if;
+          
+          when PORT3_WAIT =>
+            round_robin <= PORT0;
         end case;
 
       end if;
