@@ -94,7 +94,7 @@ begin
 			frame_data	=> frame_data(15 downto 8),
 			frame_data_valid => frame_data_valid(1),
 			meta_data	=> meta_data(47 downto 32),
-			meta_data_valid	=> meta_data_valid(2),
+			meta_data_valid	=> meta_data_valid(1),
 			port_data_out	=> port_data_out_int(15 downto 8),
 			port_data_valid	=> port_data_valid(1),
 			enough_space => enough_space(1),
