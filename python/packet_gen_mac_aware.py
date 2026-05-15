@@ -78,8 +78,9 @@ class SwitchTestGenerator:
 
         # 4. Calculate FCS and Assemble Physical Packet
         raw_bytes = raw(pkt)
-        crc = zlib.crc32(raw_bytes) & 0xffffffff
-        fcs_bytes = struct.pack('<I', crc)
+        #crc = zlib.crc32(raw_bytes) & 0xffffffff
+        crc = self.custom_crc32_msb(raw_bytes)
+        fcs_bytes = struct.pack('>I', crc)
 
         preamble_sfd = b'\x55\x55\x55\x55\x55\x55\x55\xD5'
         final_packet_bytes = preamble_sfd + raw_bytes + fcs_bytes
@@ -105,6 +106,26 @@ class SwitchTestGenerator:
         if pad_len > 0:
             pkt = pkt / Raw(load=b'\xAA' * pad_len)
         return pkt
+
+    def custom_crc32_msb(self, raw_bytes):
+            """
+            Init: 0xFFFFFFFF
+            Poly: 0x04C11DB7 
+            Final XOR: 0xFFFFFFFF
+            Data processed MSB first (Non-Reflected)
+            """
+            crc = 0xFFFFFFFF
+            poly = 0x04C11DB7
+            
+            for byte in raw_bytes:
+                crc ^= (byte << 24)
+                for _ in range(8):
+                    if crc & 0x80000000:
+                        crc = ((crc << 1) ^ poly) & 0xFFFFFFFF
+                    else:
+                        crc = (crc << 1) & 0xFFFFFFFF
+                        
+            return crc ^ 0xFFFFFFFF
 
     # ==========================================
     # TEST VECTOR GENERATION METHODS
