@@ -236,11 +236,11 @@ begin
   tx_data(23 downto 16) <= cb_out_data_2;
   tx_data(31 downto 24) <= cb_out_data_3;
 
-  -- Assuming index 0 of the crossbar's 4-bit valid signal represents the port's active valid state
-  tx_ctrl(0) <= cb_out_val_0(0);
-  tx_ctrl(1) <= cb_out_val_1(0);
-  tx_ctrl(2) <= cb_out_val_2(0);
-  tx_ctrl(3) <= cb_out_val_3(0);
+  -- tx_ctrl bit is valid if a single input is served on the output
+  tx_ctrl(0) <= cb_out_val_0(0) or cb_out_val_0(1) or cb_out_val_0(2) or cb_out_val_0(3);
+  tx_ctrl(1) <= cb_out_val_1(0) or cb_out_val_1(1) or cb_out_val_1(2) or cb_out_val_1(3);
+  tx_ctrl(2) <= cb_out_val_2(0) or cb_out_val_2(1) or cb_out_val_2(2) or cb_out_val_2(3);
+  tx_ctrl(3) <= cb_out_val_3(0) or cb_out_val_3(1) or cb_out_val_3(2) or cb_out_val_3(3);
 
   -- Component instantiations
 
