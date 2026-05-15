@@ -24,9 +24,8 @@ end switchcore;
 
 architecture arch of switchcore is
 
-  -------------------------------------------------------------------
-  -- COMPONENT DECLARATIONS (Assuming these remain unchanged from your file)
-  -------------------------------------------------------------------
+  -- Component declarations
+
   component fcs is
     port (
       clk          : in std_logic;
@@ -127,9 +126,8 @@ architecture arch of switchcore is
     );
   end component crossbar;
 
-  -------------------------------------------------------------------
-  -- INTERNAL SIGNALS
-  -------------------------------------------------------------------
+  -- Internal signals
+
   -- FCS <-> Data Parking
   signal fcs_out_data  : std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
   signal fcs_out_valid : std_logic_vector(VALID_BITS - 1 downto 0);
@@ -203,9 +201,8 @@ architecture arch of switchcore is
 
 begin
 
-  -------------------------------------------------------------------
-  -- CONCURRENT ASSIGNMENTS (Routing & Padding)
-  -------------------------------------------------------------------
+  -- Concurrent assignments
+
   -- Concatenate frame data (p0 in lower 8 bits, up to p3 in highest 8 bits)
   cb_frame_data_all <= dp_p3_data & dp_p2_data & dp_p1_data & dp_p0_data;
 
@@ -245,9 +242,8 @@ begin
   tx_ctrl(2) <= cb_out_val_2(0);
   tx_ctrl(3) <= cb_out_val_3(0);
 
-  -------------------------------------------------------------------
-  -- COMPONENT INSTANTIATIONS
-  -------------------------------------------------------------------
+  -- Component instantiations
+
   inst_fcs : fcs
   port map
   (
