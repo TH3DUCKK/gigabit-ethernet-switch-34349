@@ -79,11 +79,8 @@ begin
     rx_ctrl <= "0000";
     wait for CLK_PERIOD;
     for i in (((DATA'high + 1) / 8) - 1) downto DATA'low loop
-      rx_ctrl <= "1111";
+      rx_ctrl <= "0001";
       port0_rx<= DATA((i*8)+7 downto (i)*8);
-      port1_rx<= DATA((i*8)+7 downto (i)*8);
-      port2_rx<= DATA((i*8)+7 downto (i)*8);
-      port3_rx<= DATA((i*8)+7 downto (i)*8);
       wait for CLK_PERIOD;
     end loop;
     rx_ctrl <= "0000";
