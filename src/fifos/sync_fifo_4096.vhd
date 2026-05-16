@@ -113,7 +113,7 @@ begin
 
   -- full, almost_full and empty signals
   full  <= '1' when (not (wr_ptr(ADDR_WIDTH)) & wr_ptr(ADDR_WIDTH - 1 downto 0)) = rd_ptr else '0';
-  almost_full  <= '1' when (not (wr_ptr(ADDR_WIDTH)) & (wr_ptr(ADDR_WIDTH - 1 downto 0) - 1)) = rd_ptr else '0';
+  almost_full <= '1' when ((wr_ptr + 1) xor "1000000000000") = rd_ptr else '0'; -- xor to invert top bit of wr_ptr
   empty <= '1' when wr_ptr = rd_ptr else '0';
 
 end architecture rtl;

@@ -120,6 +120,8 @@ begin
         case packet_state is
           when IDLE =>
             if (input_valid = '1' and input_valid_prev = '0') then
+              dest_port_fifo <= STANDARD_DEST_PORT;
+              dest_port_valid_fifo <= '1';
               packet_cnt <= (others => '0');
               processed <= '0';
               packet_state <= PREAMBLE;
@@ -135,6 +137,7 @@ begin
               packet_state <= MAC_DEST;
             else
               packet_cnt <= std_logic_vector(unsigned(packet_cnt) + 1);
+              dest_port_valid_fifo <= '0';
               packet_state <= PREAMBLE;
             end if;
 

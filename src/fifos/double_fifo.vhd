@@ -174,7 +174,7 @@ begin
             if almost_full_packet = '1' then
               wr_en_packet <= '0';
               write_data_meta(15) <= '1';
-              write_data_meta(10 downto 0) <= packet_length_cnt + 1; -- should maybe be packet_length_cnt
+              write_data_meta(10 downto 0) <= packet_length_cnt;
               write_state <= FULL_MID_WRITE;
             elsif almost_full_packet = '0' and (wr_en_in = '0' and wr_en_in_prev = '1') then
               wr_en_packet <= '0';
@@ -196,7 +196,7 @@ begin
             write_state <= STILL_FULL;
 
           when STILL_FULL =>
-            if full_packet = '0' and wr_en = '0' then
+            if full_packet = '0' and almost_full_packet = '0' and wr_en_in = '0' then
               write_state <= IDLE;
             else
               write_state <= STILL_FULL;

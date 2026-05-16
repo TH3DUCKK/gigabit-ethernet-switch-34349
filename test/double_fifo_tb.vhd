@@ -27,17 +27,16 @@ architecture sim of double_fifo_tb is
 
   -- Request to send
   signal request_ack     : std_logic_vector(NUM_PORTS-1 downto 0) := (others => '0');
-  signal out_data_valid  : std_logic;
+  signal out_data_valid  : std_logic_vector(NUM_PORTS-1 downto 0);
   signal send_request    : std_logic_vector(NUM_PORTS-1 downto 0);
   signal packet_data     : std_logic_vector(BITS_PER_PORT-1 downto 0);
 
   -- Testbench organisation
   type test_state_t is (
     RESET,
-    WRITING,
-    READING,
+    NORMAL_PACKET,
     ERROR_PACKET,
-    WAITING
+    FILL_FIFO
   );
 
   signal test_state : test_state_t := RESET;
@@ -91,10 +90,12 @@ begin
 
     -- Wait until reset deasserted
     wait until rst = '1';
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
 
-    -- Write 
-    test_state <= WRITING;
+    -- ==============================================
+    -- Normal packet
+    -- ==============================================
+    test_state <= NORMAL_PACKET;
     for i in 0 to 127 loop -- packet size 128
       wr_en      <= '1';
       write_data <= "01010101";
@@ -106,31 +107,32 @@ begin
         dest_port       <= "0000";
         dest_port_valid <= '0';
       end if;
-      wait until rising_edge(clk);
+      wait for CLK_PERIOD;
     end loop;
 
     -- Stop writing
     wr_en <= '0';
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
 
     -- Wait before sending acknowledge
     wait for 10 * CLK_PERIOD;
 
     -- Send 1 cycle acknowledge
-    test_state <= READING;
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
     request_ack <= "0001";
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
     request_ack <= (others => '0');
 
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
     wait for 127 * CLK_PERIOD;
 
-    -- Write error packet
+    -- ==============================================
+    -- Error packet
+    -- ==============================================
     test_state <= ERROR_PACKET;
     for i in 0 to 63 loop -- packet size 64
       wr_en      <= '1';
-      write_data <= "11110000";
+      write_data <= std_logic_vector(to_unsigned(i, 8));
       if i = 50 then
         -- Setting destination
         dest_port       <= "0001";
@@ -139,15 +141,53 @@ begin
         dest_port       <= "0000";
         dest_port_valid <= '0';
       end if;
-      wait until rising_edge(clk);
+      wait for CLK_PERIOD;
     end loop;
 
-    -- Stop writing and flag error
+    -- Stop writing, flag error, and wait for interpacket gap
     wr_en <= '0';
     error_data <= '1';
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
     error_data <= '0';
-    wait until rising_edge(clk);
+    wait for CLK_PERIOD;
+    wait for 12 * CLK_PERIOD;
+
+    -- ==============================================
+    -- Fill up FIFO and drop incoming packets
+    -- ==============================================
+    test_state <= FILL_FIFO;
+    for j in 0 to 3 loop -- FIFO can only fit ~2.5 max size packets
+      for i in 0 to 1529 loop -- max packet size 1530
+        wr_en      <= '1';
+        write_data <= "00001111";
+        if i = 120 then
+          -- Setting destination
+          dest_port       <= "0001";
+          dest_port_valid <= '1';
+        else
+          dest_port       <= "0000";
+          dest_port_valid <= '0';
+        end if;
+        wait for CLK_PERIOD;
+      end loop;
+  
+      -- Stop writing and wait for interpacket gap
+      wr_en <= '0';
+      wait for CLK_PERIOD;
+      wait for 12 * CLK_PERIOD;
+    end loop;
+
+    -- Reading values out of FIFO
+    for j in 0 to 3 loop
+      -- Send 1 cycle acknowledge
+      wait for CLK_PERIOD;
+      request_ack <= "0001";
+      wait for CLK_PERIOD;
+      request_ack <= (others => '0');
+
+      wait for CLK_PERIOD;
+      wait for 1550 * CLK_PERIOD;
+    end loop;
 
     -- End Simulation
     wait for 20 * CLK_PERIOD;
