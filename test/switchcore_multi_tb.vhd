@@ -21,7 +21,7 @@ architecture tb of switchcore_multi_tb is
     end component switchcore;
 
     constant CLK_PERIOD : time := 10 ns;
-    constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_standard_transmission.txt";
+    constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_multiple_ports.txt";
 
     -- Core Signals
     signal clk       : std_logic := '0';
@@ -66,7 +66,7 @@ architecture tb of switchcore_multi_tb is
     
     signal exp_idx_p0, exp_idx_p1, exp_idx_p2, exp_idx_p3 : integer := 0;
 
-    -- NEW: Function to safely identify valid Hex characters
+    -- Function to safely identify valid Hex characters
     function is_hex_char(c : character) return boolean is
     begin
         case c is
@@ -118,7 +118,7 @@ begin
     end process;
 
     -- =====================================================================
-    -- PARSING PROCESS (Updated to ignore trailing CR/LF/Spaces)
+    -- PARSING PROCESS
     -- =====================================================================
     file_parser : process
         file text_file : text open read_mode is TEST_FILE;
@@ -148,14 +148,12 @@ begin
             while text_line'length > 0 loop
                 read(text_line, v_char);
                 
-                -- Skip any spaces, carriage returns, or newlines
                 if not is_hex_char(v_char) then
                     next;
                 end if;
                 
                 v_upper := hex_to_slv(v_char);
                 
-                -- Need to grab the next character for the lower nibble
                 if text_line'length > 0 then
                     read(text_line, v_char);
                     if is_hex_char(v_char) then
@@ -219,7 +217,7 @@ begin
     end process;
 
     -- =====================================================================
-    -- EXPLICIT INJECTOR PROCESSES
+    -- EXPLICIT INJECTOR PROCESSES (WITH IEEE 802.3 12-CYCLE IPG)
     -- =====================================================================
     
     -- Port 0 Injector
@@ -235,7 +233,11 @@ begin
                 end loop;
                 
                 p0_rx_ctrl <= '0'; port0_rx <= (others => '0');
-                wait until rising_edge(clk);
+                
+                -- ENFORCE MINIMUM 12 CYCLE INTER-FRAME GAP
+                for gap in 1 to 12 loop
+                    wait until rising_edge(clk);
+                end loop;
             end if;
         end loop;
         wait;
@@ -254,7 +256,11 @@ begin
                 end loop;
                 
                 p1_rx_ctrl <= '0'; port1_rx <= (others => '0');
-                wait until rising_edge(clk);
+                
+                -- ENFORCE MINIMUM 12 CYCLE INTER-FRAME GAP
+                for gap in 1 to 12 loop
+                    wait until rising_edge(clk);
+                end loop;
             end if;
         end loop;
         wait;
@@ -273,7 +279,11 @@ begin
                 end loop;
                 
                 p2_rx_ctrl <= '0'; port2_rx <= (others => '0');
-                wait until rising_edge(clk);
+                
+                -- ENFORCE MINIMUM 12 CYCLE INTER-FRAME GAP
+                for gap in 1 to 12 loop
+                    wait until rising_edge(clk);
+                end loop;
             end if;
         end loop;
         wait;
@@ -292,7 +302,11 @@ begin
                 end loop;
                 
                 p3_rx_ctrl <= '0'; port3_rx <= (others => '0');
-                wait until rising_edge(clk);
+                
+                -- ENFORCE MINIMUM 12 CYCLE INTER-FRAME GAP
+                for gap in 1 to 12 loop
+                    wait until rising_edge(clk);
+                end loop;
             end if;
         end loop;
         wait;

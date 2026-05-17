@@ -157,12 +157,26 @@ class SwitchTestGenerator:
                 # Wait 100 cycles to let the arbiter and learning queue settle completely
                 self._write_packet(f, port=0, delay_cycles=100, pkt=self._build_packet(self.macs[0], self.macs[1]))
 
+    def test_multiple_ports(self):
+        self.reset_state()
+        filename = os.path.join(self.output_dir, "test_multiple_ports.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for p in range(self.num_ports):
+                dst_port = (p + 1) % self.num_ports
+                pkt = self._build_packet(self.macs[p], self.macs[dst_port])
+                self._write_packet(f, port=p, delay_cycles=100, pkt=pkt)
+            
+                # Wait 100 cycles to let the arbiter and learning queue settle completely
+                self._write_packet(f, port=0, delay_cycles=100, pkt=self._build_packet(self.macs[0], self.macs[1]))
+
     # ... (Include all other test methods here, making sure to call self.reset_state() in each) ...
 
 if __name__ == "__main__":
     generator = SwitchTestGenerator()
     generator.test_standard_transmission()
     generator.test_simultaneous_arrival()
+    generator.test_multiple_ports()
     # ... call other tests ...
     
     print("Format: <PORT_IN> <DELAY_CYCLES> <EXPECTED_PORT_OUT> <PACKET_HEX>")
