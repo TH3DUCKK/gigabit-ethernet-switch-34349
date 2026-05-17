@@ -64,7 +64,10 @@ class SwitchTestGenerator:
             expected_port = 5 # DON'T CARE - It's stuck in the Arbiter/FIFO
         else:
             expected_port = 4 # Definitely Broadcast (Unknown)
-            
+
+        if corrupt:
+            expected_port = 6 # EXPECT DROP
+
         # 3. Handle Source MAC Learning Logic
         if src_mac not in self.mac_table and src_mac not in self.learning_queue:
             # Put it in the queue with a worst-case ready time
@@ -170,14 +173,160 @@ class SwitchTestGenerator:
                 # Wait 100 cycles to let the arbiter and learning queue settle completely
                 self._write_packet(f, port=0, delay_cycles=100, pkt=self._build_packet(self.macs[0], self.macs[1]))
 
-    # ... (Include all other test methods here, making sure to call self.reset_state() in each) ...
+    def test_back_to_back(self):
+        filename = os.path.join(self.output_dir, "test_back_to_back.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(10):
+                pkt = self._build_packet(self.macs[0], self.macs[1], size=128)
+                self._write_packet(f, port=0, delay_cycles=0, pkt=pkt)
 
+    def test_mac_learning(self):
+        filename = os.path.join(self.output_dir, "test_mac_learning.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            # 1. Port 0 sends to Port 1 (Broadcast)
+            pkt1 = self._build_packet(self.macs[0], self.macs[1])
+            self._write_packet(f, port=0, delay_cycles=200, pkt=pkt1)
+            
+            # 2. Port 1 replies to Port 0 (Switch learns)
+            pkt2 = self._build_packet(self.macs[1], self.macs[0])
+            self._write_packet(f, port=1, delay_cycles=200, pkt=pkt2)
+            
+            # 3. Port 0 sends to Port 1 again (Unicast)
+            pkt3 = self._build_packet(self.macs[0], self.macs[1])
+            self._write_packet(f, port=0, delay_cycles=200, pkt=pkt3)
+
+    def test_errors(self):
+        filename = os.path.join(self.output_dir, "test_errors.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for i in range(10):
+                pkt = self._build_packet(self.macs[0], self.macs[1], size=64)
+                is_corrupt = (i % 3 == 0)
+                self._write_packet(f, port=0, delay_cycles=50, pkt=pkt, corrupt=is_corrupt)
+
+    def test_congestion(self):
+        filename = os.path.join(self.output_dir, "test_congestion.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(self.num_vectors // 4):
+                for p in range(1, self.num_ports):
+                    pkt = self._build_packet(self.macs[p], self.macs[0], size=256)
+                    self._write_packet(f, port=p, delay_cycles=0, pkt=pkt)
+
+    def test_heavy_load(self):
+        filename = os.path.join(self.output_dir, "test_heavy_load.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(self.num_vectors):
+                src_p = random.randint(0, self.num_ports - 1)
+                dst_p = random.randint(0, self.num_ports - 1)
+                while dst_p == src_p: dst_p = random.randint(0, self.num_ports - 1)
+                
+                pkt = self._build_packet(self.macs[src_p], self.macs[dst_p], size=random.randint(64, 512))
+                self._write_packet(f, port=src_p, delay_cycles=random.randint(0, 5), pkt=pkt)
+
+    def test_fifo_fill_big_packets(self):
+        filename = os.path.join(self.output_dir, "test_fifo_fill_big_packets.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(self.num_vectors // 2):
+                pkt = self._build_packet(self.macs[0], self.macs[1], size=1518)
+                self._write_packet(f, port=0, delay_cycles=0, pkt=pkt)
+
+    def test_packet_sizes(self):
+        filename = os.path.join(self.output_dir, "test_packet_sizes.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(20):
+                size = 1518 if random.random() < 0.9 else 64
+                pkt = self._build_packet(self.macs[0], self.macs[1], size=size)
+                self._write_packet(f, port=0, delay_cycles=10, pkt=pkt)
+                
+            for _ in range(20):
+                size = 64 if random.random() < 0.9 else 1518
+                pkt = self._build_packet(self.macs[1], self.macs[0], size=size)
+                self._write_packet(f, port=1, delay_cycles=10, pkt=pkt)
+
+    def test_unique_macs(self):
+        filename = os.path.join(self.output_dir, "test_unique_macs.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for i in range(self.num_vectors):
+                unique_src = f"0A:00:00:00:{i//256:02x}:{i%256:02x}"
+                unique_dst = f"0B:00:00:00:{i//256:02x}:{i%256:02x}"
+                pkt = self._build_packet(unique_src, unique_dst)
+                port = i % self.num_ports
+                self._write_packet(f, port=port, delay_cycles=20, pkt=pkt)
+
+    def test_congestion(self):
+        filename = os.path.join(self.output_dir, "test_congestion.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(self.num_vectors // 4):
+                for p in range(1, self.num_ports):
+                    pkt = self._build_packet(self.macs[p], self.macs[0], size=256)
+                    self._write_packet(f, port=p, delay_cycles=0, pkt=pkt)
+
+    def test_heavy_load(self):
+        filename = os.path.join(self.output_dir, "test_heavy_load.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(self.num_vectors):
+                src_p = random.randint(0, self.num_ports - 1)
+                dst_p = random.randint(0, self.num_ports - 1)
+                while dst_p == src_p: dst_p = random.randint(0, self.num_ports - 1)
+                
+                pkt = self._build_packet(self.macs[src_p], self.macs[dst_p], size=random.randint(64, 512))
+                self._write_packet(f, port=src_p, delay_cycles=random.randint(0, 5), pkt=pkt)
+
+    def test_fifo_fill_big_packets(self):
+        filename = os.path.join(self.output_dir, "test_fifo_fill_big_packets.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(self.num_vectors // 2):
+                pkt = self._build_packet(self.macs[0], self.macs[1], size=1518)
+                self._write_packet(f, port=0, delay_cycles=0, pkt=pkt)
+
+    def test_packet_sizes(self):
+        filename = os.path.join(self.output_dir, "test_packet_sizes.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for _ in range(20):
+                size = 1518 if random.random() < 0.9 else 64
+                pkt = self._build_packet(self.macs[0], self.macs[1], size=size)
+                self._write_packet(f, port=0, delay_cycles=10, pkt=pkt)
+                
+            for _ in range(20):
+                size = 64 if random.random() < 0.9 else 1518
+                pkt = self._build_packet(self.macs[1], self.macs[0], size=size)
+                self._write_packet(f, port=1, delay_cycles=10, pkt=pkt)
+
+    def test_unique_macs(self):
+        filename = os.path.join(self.output_dir, "test_unique_macs.txt")
+        print(f"Generating: {filename}...")
+        with open(filename, 'w') as f:
+            for i in range(self.num_vectors):
+                unique_src = f"0A:00:00:00:{i//256:02x}:{i%256:02x}"
+                unique_dst = f"0B:00:00:00:{i//256:02x}:{i%256:02x}"
+                pkt = self._build_packet(unique_src, unique_dst)
+                port = i % self.num_ports
+                self._write_packet(f, port=port, delay_cycles=20, pkt=pkt)
+    
 if __name__ == "__main__":
     generator = SwitchTestGenerator()
-    generator.test_standard_transmission()
+    generator.test_standard_transmission() # PASSING
+    generator.test_back_to_back()
+    generator.test_mac_learning() # 
+    generator.test_errors()
     generator.test_simultaneous_arrival()
     generator.test_multiple_ports()
-    # ... call other tests ...
+    generator.test_congestion()
+    generator.test_heavy_load()
+    generator.test_unique_macs()
+    generator.test_fifo_fill_big_packets()
+    generator.test_packet_sizes()
     
     print("Format: <PORT_IN> <DELAY_CYCLES> <EXPECTED_PORT_OUT> <PACKET_HEX>")
     print("Expected: 0-3 (Unicast), 4 (Broadcast), 5 (DON'T CARE - Uncertainty Window)")
