@@ -21,8 +21,8 @@ architecture tb of switchcore_multi_tb is
     end component switchcore;
 
     constant CLK_PERIOD : time := 10 ns;
-    --constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_standard_transmission.txt";
-    constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_back_to_back.txt";
+    constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_standard_transmission_edit.txt";
+    --constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_back_to_back.txt";
     --constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_mac_learning.txt";
     --constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_errors.txt";
     --constant TEST_FILE  : string := "/home/andreas/Documents/Programming/gigabit-ethernet-switch-34349/python/test_vectors/test_simultaneous_arrival.txt";
