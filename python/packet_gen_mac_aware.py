@@ -190,11 +190,11 @@ class SwitchTestGenerator:
             self._write_packet(f, port=0, delay_cycles=200, pkt=pkt1)
             
             # 2. Port 1 replies to Port 0 (Switch learns)
-            pkt2 = self._build_packet(self.macs[1], self.macs[0])
+            pkt2 = self._build_packet(self.macs[1], self.macs[2])
             self._write_packet(f, port=1, delay_cycles=200, pkt=pkt2)
             
             # 3. Port 0 sends to Port 1 again (Unicast)
-            pkt3 = self._build_packet(self.macs[0], self.macs[1])
+            pkt3 = self._build_packet(self.macs[2], self.macs[1])
             self._write_packet(f, port=0, delay_cycles=200, pkt=pkt3)
 
     def test_errors(self):
