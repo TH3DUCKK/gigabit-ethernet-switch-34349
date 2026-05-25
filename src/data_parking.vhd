@@ -274,7 +274,7 @@ begin
       crossbar_data         => p0_data,
       crossbar_request_size => p0_packet_length,
       crossbar_send_request => p0_request,
-      crossbar_valid        => p0_valid
+      crossbar_valid        => p0_ctrl
     );
 
   ------------------------------------------------------------------------------
@@ -310,7 +310,7 @@ begin
       crossbar_data         => p1_data,
       crossbar_request_size => p1_packet_length,
       crossbar_send_request => p1_request,
-      crossbar_valid        => p1_valid
+      crossbar_valid        => p1_ctrl
     );
 
   ------------------------------------------------------------------------------
@@ -346,7 +346,7 @@ begin
       crossbar_data         => p2_data,
       crossbar_request_size => p2_packet_length,
       crossbar_send_request => p2_request,
-      crossbar_valid        => p2_valid
+      crossbar_valid        => p2_ctrl
     );
 
   ------------------------------------------------------------------------------
@@ -382,6 +382,6 @@ begin
       crossbar_data         => p3_data,
       crossbar_request_size => p3_packet_length,
       crossbar_send_request => p3_request,
-      crossbar_valid        => p3_valid
+      crossbar_valid        => p3_ctrl
     );
 end architecture rtl;
