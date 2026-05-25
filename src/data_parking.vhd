@@ -19,7 +19,7 @@ entity data_parking is
 
     -- Data inputs
     input_data  : in std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
-    input_valid : in std_logic_vector(VALID_BITS - 1 downto 0);
+    input_ctrl  : in std_logic_vector(VALID_BITS - 1 downto 0);
     input_error : in std_logic_vector(ERROR_BITS - 1 downto 0);
 
     -- Mac inputs
@@ -42,22 +42,22 @@ entity data_parking is
     p0_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
     p0_packet_length : out std_logic_vector(10 downto 0);
     p0_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-    p0_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0);
+    p0_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0);
 
     p1_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
     p1_packet_length : out std_logic_vector(10 downto 0);
     p1_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-    p1_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0);
+    p1_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0);
 
     p2_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
     p2_packet_length : out std_logic_vector(10 downto 0);
     p2_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-    p2_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0);
+    p2_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0);
 
     p3_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
     p3_packet_length : out std_logic_vector(10 downto 0);
     p3_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-    p3_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0)
+    p3_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0)
   );
 end entity data_parking;
 
@@ -256,7 +256,7 @@ begin
 
       -- Data input
       input_data  => input_data(BITS_PER_PORT - 1 downto 0),
-      input_valid => input_valid(0),
+      input_valid => input_ctrl(0),
       input_error => input_error(0),
 
       -- Input from MAC
@@ -292,7 +292,7 @@ begin
 
       -- Data input
       input_data  => input_data((2 * BITS_PER_PORT) - 1 downto BITS_PER_PORT),
-      input_valid => input_valid(1),
+      input_valid => input_ctrl(1),
       input_error => input_error(1),
 
       -- Input from MAC
@@ -328,7 +328,7 @@ begin
 
       -- Data input
       input_data  => input_data((3 * BITS_PER_PORT) - 1 downto (2 * BITS_PER_PORT)),
-      input_valid => input_valid(2),
+      input_valid => input_ctrl(2),
       input_error => input_error(2),
 
       -- Input from MAC
@@ -364,7 +364,7 @@ begin
 
       -- Data input
       input_data  => input_data((4 * BITS_PER_PORT) - 1 downto (3 * BITS_PER_PORT)),
-      input_valid => input_valid(3),
+      input_valid => input_ctrl(3),
       input_error => input_error(3),
 
       -- Input from MAC

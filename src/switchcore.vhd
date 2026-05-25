@@ -31,9 +31,9 @@ architecture arch of switchcore is
       clk          : in std_logic;
       rst          : in std_logic;
       input_data   : in std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
-      input_valid  : in std_logic_vector(VALID_BITS - 1 downto 0);
+      input_ctrl   : in std_logic_vector(VALID_BITS - 1 downto 0);
       output_data  : out std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
-      output_valid : out std_logic_vector(VALID_BITS - 1 downto 0);
+      output_ctrl  : out std_logic_vector(VALID_BITS - 1 downto 0);
       output_error : out std_logic_vector(ERROR_BITS - 1 downto 0)
     );
   end component fcs;
@@ -43,7 +43,7 @@ architecture arch of switchcore is
       clk              : in std_logic;
       rst              : in std_logic;
       input_data       : in std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
-      input_valid      : in std_logic_vector(VALID_BITS - 1 downto 0);
+      input_ctrl       : in std_logic_vector(VALID_BITS - 1 downto 0);
       input_error      : in std_logic_vector(ERROR_BITS - 1 downto 0);
       ready            : in std_logic;
       dest_port        : in std_logic_vector(NUM_PORTS - 1 downto 0);
@@ -58,19 +58,19 @@ architecture arch of switchcore is
       p0_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
       p0_packet_length : out std_logic_vector(10 downto 0);
       p0_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-      p0_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0);
+      p0_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0);
       p1_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
       p1_packet_length : out std_logic_vector(10 downto 0);
       p1_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-      p1_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0);
+      p1_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0);
       p2_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
       p2_packet_length : out std_logic_vector(10 downto 0);
       p2_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-      p2_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0);
+      p2_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0);
       p3_data          : out std_logic_vector(BITS_PER_PORT - 1 downto 0);
       p3_packet_length : out std_logic_vector(10 downto 0);
       p3_request       : out std_logic_vector(NUM_PORTS - 1 downto 0);
-      p3_valid         : out std_logic_vector(NUM_PORTS - 1 downto 0)
+      p3_ctrl          : out std_logic_vector(NUM_PORTS - 1 downto 0)
     );
   end component data_parking;
 
@@ -93,35 +93,35 @@ architecture arch of switchcore is
       rst : in std_logic;
 
       frame_data_0       : in std_logic_vector(31 downto 0);
-      frame_data_valid_0 : in std_logic_vector(3 downto 0);
+      frame_data_ctrl_0 : in std_logic_vector(3 downto 0);
       meta_data_0        : in std_logic_vector(63 downto 0);
       meta_data_valid_0  : in std_logic_vector(3 downto 0);
       port_data_out_0    : out std_logic_vector(7 downto 0);
-      port_data_valid_0  : out std_logic_vector(3 downto 0);
+      port_data_ctrl_0  : out std_logic_vector(3 downto 0);
       enough_space_0     : out std_logic_vector(3 downto 0);
 
       frame_data_1       : in std_logic_vector(31 downto 0);
-      frame_data_valid_1 : in std_logic_vector(3 downto 0);
+      frame_data_ctrl_1 : in std_logic_vector(3 downto 0);
       meta_data_1        : in std_logic_vector(63 downto 0);
       meta_data_valid_1  : in std_logic_vector(3 downto 0);
       port_data_out_1    : out std_logic_vector(7 downto 0);
-      port_data_valid_1  : out std_logic_vector(3 downto 0);
+      port_data_ctrl_1  : out std_logic_vector(3 downto 0);
       enough_space_1     : out std_logic_vector(3 downto 0);
 
       frame_data_2       : in std_logic_vector(31 downto 0);
-      frame_data_valid_2 : in std_logic_vector(3 downto 0);
+      frame_data_ctrl_2 : in std_logic_vector(3 downto 0);
       meta_data_2        : in std_logic_vector(63 downto 0);
       meta_data_valid_2  : in std_logic_vector(3 downto 0);
       port_data_out_2    : out std_logic_vector(7 downto 0);
-      port_data_valid_2  : out std_logic_vector(3 downto 0);
+      port_data_ctrl_2  : out std_logic_vector(3 downto 0);
       enough_space_2     : out std_logic_vector(3 downto 0);
 
       frame_data_3       : in std_logic_vector(31 downto 0);
-      frame_data_valid_3 : in std_logic_vector(3 downto 0);
+      frame_data_ctrl_3 : in std_logic_vector(3 downto 0);
       meta_data_3        : in std_logic_vector(63 downto 0);
       meta_data_valid_3  : in std_logic_vector(3 downto 0);
       port_data_out_3    : out std_logic_vector(7 downto 0);
-      port_data_valid_3  : out std_logic_vector(3 downto 0);
+      port_data_ctrl_3  : out std_logic_vector(3 downto 0);
       enough_space_3     : out std_logic_vector(3 downto 0)
     );
   end component crossbar;
@@ -130,7 +130,7 @@ architecture arch of switchcore is
 
   -- FCS <-> Data Parking
   signal fcs_out_data  : std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
-  signal fcs_out_valid : std_logic_vector(VALID_BITS - 1 downto 0);
+  signal fcs_out_ctrl : std_logic_vector(VALID_BITS - 1 downto 0);
   signal fcs_out_error : std_logic_vector(ERROR_BITS - 1 downto 0);
 
   -- Data Parking <-> MAC Learning Top
@@ -150,38 +150,38 @@ architecture arch of switchcore is
   -- Data Parking Outputs
   signal dp_p0_data : std_logic_vector(BITS_PER_PORT - 1 downto 0);
   signal dp_p0_len  : std_logic_vector(10 downto 0);
-  signal dp_p0_val  : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_p0_ctrl  : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal dp_p0_req  : std_logic_vector(NUM_PORTS - 1 downto 0);
 
   signal dp_p1_data : std_logic_vector(BITS_PER_PORT - 1 downto 0);
   signal dp_p1_len  : std_logic_vector(10 downto 0);
-  signal dp_p1_val  : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_p1_ctrl  : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal dp_p1_req  : std_logic_vector(NUM_PORTS - 1 downto 0);
 
   signal dp_p2_data : std_logic_vector(BITS_PER_PORT - 1 downto 0);
   signal dp_p2_len  : std_logic_vector(10 downto 0);
-  signal dp_p2_val  : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_p2_ctrl  : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal dp_p2_req  : std_logic_vector(NUM_PORTS - 1 downto 0);
 
   signal dp_p3_data : std_logic_vector(BITS_PER_PORT - 1 downto 0);
   signal dp_p3_len  : std_logic_vector(10 downto 0);
-  signal dp_p3_val  : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_p3_ctrl  : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal dp_p3_req  : std_logic_vector(NUM_PORTS - 1 downto 0);
 
   -- Crossbar Common Bus Inputs
-  signal cb_frame_data_all : std_logic_vector(31 downto 0);
-  signal cb_meta_data_all  : std_logic_vector(63 downto 0);
-  signal cb_req_meta_valid_op0 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
-  signal cb_req_meta_valid_op1 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
-  signal cb_req_meta_valid_op2 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
-  signal cb_req_meta_valid_op3 : STD_LOGIC_VECTOR(NUM_PORTS - 1 downto 0);
+  signal cb_frame_data_all     : std_logic_vector(31 downto 0);
+  signal cb_meta_data_all      : std_logic_vector(63 downto 0);
+  signal cb_req_meta_valid_op0 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal cb_req_meta_valid_op1 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal cb_req_meta_valid_op2 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal cb_req_meta_valid_op3 : std_logic_vector(NUM_PORTS - 1 downto 0);
 
   -- Data parking transposed valid signal
-  signal dp_valid_transposed_0 : std_logic_vector(NUM_PORTS - 1 downto 0);
-  signal dp_valid_transposed_1 : std_logic_vector(NUM_PORTS - 1 downto 0);
-  signal dp_valid_transposed_2 : std_logic_vector(NUM_PORTS - 1 downto 0);
-  signal dp_valid_transposed_3 : std_logic_vector(NUM_PORTS - 1 downto 0);
-  
+  signal dp_ctrl_transposed_0 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_ctrl_transposed_1 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_ctrl_transposed_2 : std_logic_vector(NUM_PORTS - 1 downto 0);
+  signal dp_ctrl_transposed_3 : std_logic_vector(NUM_PORTS - 1 downto 0);
+
   -- Data parking transposed full signal
   signal dp_space_ack_transposed_0 : std_logic_vector(NUM_PORTS - 1 downto 0);
   signal dp_space_ack_transposed_1 : std_logic_vector(NUM_PORTS - 1 downto 0);
@@ -190,13 +190,13 @@ architecture arch of switchcore is
 
   -- Crossbar Outputs
   signal cb_out_data_0 : std_logic_vector(7 downto 0);
-  signal cb_out_val_0  : std_logic_vector(3 downto 0);
+  signal cb_out_ctrl_0  : std_logic_vector(3 downto 0);
   signal cb_out_data_1 : std_logic_vector(7 downto 0);
-  signal cb_out_val_1  : std_logic_vector(3 downto 0);
+  signal cb_out_ctrl_1  : std_logic_vector(3 downto 0);
   signal cb_out_data_2 : std_logic_vector(7 downto 0);
-  signal cb_out_val_2  : std_logic_vector(3 downto 0);
+  signal cb_out_ctrl_2  : std_logic_vector(3 downto 0);
   signal cb_out_data_3 : std_logic_vector(7 downto 0);
-  signal cb_out_val_3  : std_logic_vector(3 downto 0);
+  signal cb_out_ctrl_3  : std_logic_vector(3 downto 0);
   signal cb_out_conc   : std_logic_vector(DATA_BUS_WIDTH - 1 downto 0);
 
 begin
@@ -225,10 +225,10 @@ begin
   dp_space_ack_transposed_3 <= space_ack_3(3) & space_ack_2(3) & space_ack_1(3) & space_ack_0(3);
 
   -- Transpose valid signals
-  dp_valid_transposed_0 <= dp_p3_val(0) & dp_p2_val(0) & dp_p1_val(0) & dp_p0_val(0);
-  dp_valid_transposed_1 <= dp_p3_val(1) & dp_p2_val(1) & dp_p1_val(1) & dp_p0_val(1);
-  dp_valid_transposed_2 <= dp_p3_val(2) & dp_p2_val(2) & dp_p1_val(2) & dp_p0_val(2);
-  dp_valid_transposed_3 <= dp_p3_val(3) & dp_p2_val(3) & dp_p1_val(3) & dp_p0_val(3);
+  dp_ctrl_transposed_0 <= dp_p3_ctrl(0) & dp_p2_ctrl(0) & dp_p1_ctrl(0) & dp_p0_ctrl(0);
+  dp_ctrl_transposed_1 <= dp_p3_ctrl(1) & dp_p2_ctrl(1) & dp_p1_ctrl(1) & dp_p0_ctrl(1);
+  dp_ctrl_transposed_3 <= dp_p3_ctrl(3) & dp_p2_ctrl(3) & dp_p1_ctrl(3) & dp_p0_ctrl(3);
+  dp_ctrl_transposed_2 <= dp_p3_ctrl(2) & dp_p2_ctrl(2) & dp_p1_ctrl(2) & dp_p0_ctrl(2);
 
   -- Map Crossbar Outputs to Switchcore Transmit Ports
   tx_data(7 downto 0)   <= cb_out_data_0;
@@ -237,10 +237,10 @@ begin
   tx_data(31 downto 24) <= cb_out_data_3;
 
   -- tx_ctrl bit is valid if a single input is served on the output
-  tx_ctrl(0) <= cb_out_val_0(0) or cb_out_val_0(1) or cb_out_val_0(2) or cb_out_val_0(3);
-  tx_ctrl(1) <= cb_out_val_1(0) or cb_out_val_1(1) or cb_out_val_1(2) or cb_out_val_1(3);
-  tx_ctrl(2) <= cb_out_val_2(0) or cb_out_val_2(1) or cb_out_val_2(2) or cb_out_val_2(3);
-  tx_ctrl(3) <= cb_out_val_3(0) or cb_out_val_3(1) or cb_out_val_3(2) or cb_out_val_3(3);
+  tx_ctrl(0) <= cb_out_ctrl_0(0) or cb_out_ctrl_0(1) or cb_out_ctrl_0(2) or cb_out_ctrl_0(3);
+  tx_ctrl(1) <= cb_out_ctrl_1(0) or cb_out_ctrl_1(1) or cb_out_ctrl_1(2) or cb_out_ctrl_1(3);
+  tx_ctrl(2) <= cb_out_ctrl_2(0) or cb_out_ctrl_2(1) or cb_out_ctrl_2(2) or cb_out_ctrl_2(3);
+  tx_ctrl(3) <= cb_out_ctrl_3(0) or cb_out_ctrl_3(1) or cb_out_ctrl_3(2) or cb_out_ctrl_3(3);
 
   -- Component instantiations
 
@@ -250,9 +250,9 @@ begin
     clk          => clk,
     rst          => reset,
     input_data   => rx_data,
-    input_valid  => rx_ctrl,
+    input_ctrl   => rx_ctrl,
     output_data  => fcs_out_data,
-    output_valid => fcs_out_valid,
+    output_ctrl  => fcs_out_ctrl,
     output_error => fcs_out_error
   );
 
@@ -263,7 +263,7 @@ begin
     rst => reset,
 
     input_data  => fcs_out_data,
-    input_valid => fcs_out_valid,
+    input_ctrl  => fcs_out_ctrl,
     input_error => fcs_out_error,
 
     ready            => mac_ans_ready,
@@ -281,22 +281,22 @@ begin
     p0_data          => dp_p0_data,
     p0_packet_length => dp_p0_len,
     p0_request       => dp_p0_req,
-    p0_valid         => dp_p0_val,
+    p0_ctrl          => dp_p0_ctrl,
 
     p1_data          => dp_p1_data,
     p1_packet_length => dp_p1_len,
     p1_request       => dp_p1_req,
-    p1_valid         => dp_p1_val,
+    p1_ctrl          => dp_p1_ctrl,
 
     p2_data          => dp_p2_data,
     p2_packet_length => dp_p2_len,
     p2_request       => dp_p2_req,
-    p2_valid         => dp_p2_val,
+    p2_ctrl          => dp_p2_ctrl,
 
     p3_data          => dp_p3_data,
     p3_packet_length => dp_p3_len,
     p3_request       => dp_p3_req,
-    p3_valid         => dp_p3_val
+    p3_ctrl          => dp_p3_ctrl
   );
 
   inst_mac_learning : mac_learning_top
@@ -320,38 +320,38 @@ begin
 
     -- PORT 0 DESTINATION
     frame_data_0       => cb_frame_data_all,
-    frame_data_valid_0 => dp_valid_transposed_0,
+    frame_data_ctrl_0 => dp_ctrl_transposed_0,
     meta_data_0        => cb_meta_data_all,
     meta_data_valid_0  => cb_req_meta_valid_op0,
     port_data_out_0    => cb_out_data_0,
-    port_data_valid_0  => cb_out_val_0,
+    port_data_ctrl_0  => cb_out_ctrl_0,
     enough_space_0     => space_ack_0,
 
     -- PORT 1 DESTINATION
     frame_data_1       => cb_frame_data_all,
-    frame_data_valid_1 => dp_valid_transposed_1,
+    frame_data_ctrl_1 => dp_ctrl_transposed_1,
     meta_data_1        => cb_meta_data_all,
     meta_data_valid_1  => cb_req_meta_valid_op1,
     port_data_out_1    => cb_out_data_1,
-    port_data_valid_1  => cb_out_val_1,
+    port_data_ctrl_1  => cb_out_ctrl_1,
     enough_space_1     => space_ack_1,
 
     -- PORT 2 DESTINATION
     frame_data_2       => cb_frame_data_all,
-    frame_data_valid_2 => dp_valid_transposed_2,
+    frame_data_ctrl_2 => dp_ctrl_transposed_2,
     meta_data_2        => cb_meta_data_all,
     meta_data_valid_2  => cb_req_meta_valid_op2,
     port_data_out_2    => cb_out_data_2,
-    port_data_valid_2  => cb_out_val_2,
+    port_data_ctrl_2  => cb_out_ctrl_2,
     enough_space_2     => space_ack_2,
 
     -- PORT 3 DESTINATION
     frame_data_3       => cb_frame_data_all,
-    frame_data_valid_3 => dp_valid_transposed_3,
+    frame_data_ctrl_3 => dp_ctrl_transposed_3,
     meta_data_3        => cb_meta_data_all,
     meta_data_valid_3  => cb_req_meta_valid_op3,
     port_data_out_3    => cb_out_data_3,
-    port_data_valid_3  => cb_out_val_3,
+    port_data_ctrl_3  => cb_out_ctrl_3,
     enough_space_3     => space_ack_3
   );
 

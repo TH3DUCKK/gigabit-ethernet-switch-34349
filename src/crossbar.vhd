@@ -12,42 +12,42 @@ entity crossbar is
 
 		-- PORT 0
 		frame_data_0 		: in std_logic_vector(31 downto 0); 
-		frame_data_valid_0 	: in std_logic_vector(3 downto 0); 
+		frame_data_ctrl_0 	: in std_logic_vector(3 downto 0); 
 		meta_data_0		: in std_logic_vector(63 downto 0); 
 		meta_data_valid_0 	: in std_logic_vector(3 downto 0); 
 		
 		port_data_out_0 	: out std_logic_vector(7 downto 0); 
-		port_data_valid_0 	: out std_logic_vector(3 downto 0); 
+		port_data_ctrl_0 	: out std_logic_vector(3 downto 0); 
 		enough_space_0		: out std_logic_vector(3 downto 0);
 
 		-- PORT 1
 		frame_data_1 		: in std_logic_vector(31 downto 0); 
-		frame_data_valid_1 	: in std_logic_vector(3 downto 0); 
+		frame_data_ctrl_1 	: in std_logic_vector(3 downto 0); 
 		meta_data_1		: in std_logic_vector(63 downto 0); 
 		meta_data_valid_1 	: in std_logic_vector(3 downto 0); 
 		
 		port_data_out_1 	: out std_logic_vector(7 downto 0); 
-		port_data_valid_1 	: out std_logic_vector(3 downto 0); 
+		port_data_ctrl_1 	: out std_logic_vector(3 downto 0); 
 		enough_space_1		: out std_logic_vector(3 downto 0);
 
 		-- PORT 2
 		frame_data_2 		: in std_logic_vector(31 downto 0); 
-		frame_data_valid_2 	: in std_logic_vector(3 downto 0); 
+		frame_data_ctrl_2 	: in std_logic_vector(3 downto 0); 
 		meta_data_2		: in std_logic_vector(63 downto 0); 
 		meta_data_valid_2 	: in std_logic_vector(3 downto 0); 
 		
 		port_data_out_2 	: out std_logic_vector(7 downto 0); 
-		port_data_valid_2 	: out std_logic_vector(3 downto 0); 
+		port_data_ctrl_2 	: out std_logic_vector(3 downto 0); 
 		enough_space_2		: out std_logic_vector(3 downto 0);
 
 		-- PORT 3
 		frame_data_3 		: in std_logic_vector(31 downto 0); 
-		frame_data_valid_3 	: in std_logic_vector(3 downto 0); 
+		frame_data_ctrl_3 	: in std_logic_vector(3 downto 0); 
 		meta_data_3		: in std_logic_vector(63 downto 0); 
 		meta_data_valid_3 	: in std_logic_vector(3 downto 0); 
 		
 		port_data_out_3 	: out std_logic_vector(7 downto 0); 
-		port_data_valid_3 	: out std_logic_vector(3 downto 0); 
+		port_data_ctrl_3 	: out std_logic_vector(3 downto 0); 
 		enough_space_3		: out std_logic_vector(3 downto 0)
 
   		);
@@ -81,12 +81,12 @@ end entity crossbar;
         	clk => clk,   	
 		rst => rst, 		 
 		frame_data => frame_data_0, 	 
-		frame_data_valid => frame_data_valid_0,   
+		frame_data_valid => frame_data_ctrl_0,   
 		meta_data => meta_data_0,	
 		meta_data_valid => meta_data_valid_0,   
 		
 		port_data_out => port_data_out_0,	 
-		port_data_valid => port_data_valid_0,   
+		port_data_valid => port_data_ctrl_0,   
 		enough_space => enough_space_0	
    	);	
 
@@ -96,12 +96,12 @@ end entity crossbar;
         	clk => clk,   	
 		rst => rst, 		 
 		frame_data => frame_data_1, 	 
-		frame_data_valid => frame_data_valid_1,   
+		frame_data_valid => frame_data_ctrl_1,   
 		meta_data => meta_data_1,	
 		meta_data_valid => meta_data_valid_1,   
 		
 		port_data_out => port_data_out_1,	 
-		port_data_valid => port_data_valid_1,   
+		port_data_valid => port_data_ctrl_1,   
 		enough_space => enough_space_1	
    	);	
 
@@ -111,12 +111,12 @@ end entity crossbar;
         	clk => clk,   	
 		rst => rst, 		 
 		frame_data => frame_data_2, 	 
-		frame_data_valid => frame_data_valid_2,   
+		frame_data_valid => frame_data_ctrl_2,   
 		meta_data => meta_data_2,	
 		meta_data_valid => meta_data_valid_2,   
 		
 		port_data_out => port_data_out_2,	 
-		port_data_valid => port_data_valid_2,   
+		port_data_valid => port_data_ctrl_2,   
 		enough_space => enough_space_2	
    	);	
 	
@@ -126,12 +126,12 @@ end entity crossbar;
         	clk => clk,   	
 		rst => rst, 		 
 		frame_data => frame_data_3, 	 
-		frame_data_valid => frame_data_valid_3,   
+		frame_data_valid => frame_data_ctrl_3,   
 		meta_data => meta_data_3,	
 		meta_data_valid => meta_data_valid_3,   
 		
 		port_data_out => port_data_out_3,	 
-		port_data_valid => port_data_valid_3,   
+		port_data_valid => port_data_ctrl_3,   
 		enough_space => enough_space_3	
    	);	
 
