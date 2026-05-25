@@ -50,7 +50,8 @@ architecture rtl of Output_port_X is
 			enough_space	: out std_logic;
 			end_of_frame 	: out std_logic; 
 			empty_frame_fifo : out std_logic;  
-			RR_read_enable : in std_logic		); 
+			RR_read_enable : in std_logic
+		); 
 	end component crossbar_double_fifo; 
 
 	component Round_Robin is 
@@ -93,7 +94,7 @@ begin
 			rst		=> rst,
 			frame_data	=> frame_data(15 downto 8),
 			frame_data_valid => frame_data_valid(1),
-			meta_data	=> meta_data(47 downto 32),
+			meta_data	=> meta_data(31 downto 16),
 			meta_data_valid	=> meta_data_valid(1),
 			port_data_out	=> port_data_out_int(15 downto 8),
 			port_data_valid	=> port_data_valid(1),
