@@ -190,7 +190,7 @@ architecture rtl of crossbar_double_fifo is
         		reg_read_enable        		<= '0';
         		reg_reg_read_enable     	<= '0';
         		reg_end_of_enable_int 		<= '0';
-			reg_reg_end_of_enable_int 	<= '0';
+				reg_reg_end_of_enable_int 	<= '0';
 
 		elsif rising_edge(clk) then
 			reg_read_enable <= frame_fifo_read_enable; 
@@ -222,7 +222,6 @@ architecture rtl of crossbar_double_fifo is
         	if rst = '0' then
 
             		state <= IDLE;
-            		store_meta_data <= (others => '0');
 
         	else
 
@@ -243,7 +242,7 @@ architecture rtl of crossbar_double_fifo is
 		
 		next_state <= state;
    		enough_space <= '0';
-    		meta_data_write_enable <= '0';
+    	meta_data_write_enable <= '0';
 
 		case(state) is 
 			when IDLE => 
@@ -254,8 +253,7 @@ architecture rtl of crossbar_double_fifo is
 				end if; 
 				
 				enough_space <= '0'; 
-				meta_data_write_enable <= '0';
-				store_meta_data	<= meta_data; 
+				meta_data_write_enable <= '0'; 
  
 			when CHECK_SPACE => 
 				if (store_meta_data(10 downto 0) < space_in_frame_fifo) then
