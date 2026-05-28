@@ -50,7 +50,8 @@ begin
 	count : process(clock, reset)
 	begin
     		if (reset = '0') then
-       		 	count_int <= "0001";  
+       		 	count_int <= "0001"; 
+				count_int_prev <= "0001";  
     		elsif rising_edge(clock) then
        			if (count_en = '1') then
 
@@ -66,7 +67,7 @@ begin
 	process(clock, reset)
 	begin
 		if rising_edge(clock) then 
-			if count_ifg_rst = '1' then
+			if count_ifg_rst = '1' or reset = '0' then
 
 				count_reg <= "0110"; 
 
@@ -95,6 +96,8 @@ begin
 			when ALL_EMPTY => 
 				if (empty /= "1111") then
 					next_state <= PICK_FIFO;
+				else 
+					next_state <= ALL_EMPTY; 
 				end if; 
 				
 					count_en <= '0'; 
@@ -104,7 +107,9 @@ begin
  
 			when PICK_FIFO => 
 				if ((empty and count_int )= "0000") then
-					next_state <= IFG_CHECK; 
+					next_state <= IFG_CHECK;
+				else 
+					next_state <= PICK_FIFO; 
 				end if; 
 					count_en <= '1'; 
 					read_en <= "0000"; 
@@ -138,12 +143,17 @@ begin
 	
 				elsif (frame_done /= "0000") then
 					next_state <= PICK_FIFO;
-
+				else 
+					next_state <= TRANSMIT; 
 				end if; 
 		 			count_en <= '0'; 
 					read_en <= "0000"; 
 					sel <= count_int_prev;
 					count_ifg_rst <= '1'; 
+
+					
+			when others =>
+                next_state <= ALL_EMPTY;
 					
 			end case; 
 		end process comp;  	

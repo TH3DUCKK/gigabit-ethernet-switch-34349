@@ -214,31 +214,55 @@ architecture rtl of crossbar_double_fifo is
 
 
 	--FSM to load
-	seq: process(clk, rst)
+	seq : process(clk)
 	begin
-		if (rst = '0') then 
-			state <= IDLE; 
-		elsif(rising_edge(clk)) then 
-			state <= next_state; 
-		end if; 
-	end process seq; 
+    		if rising_edge(clk) then
 
-	comp: process(state, meta_data, meta_data_valid, space_in_frame_fifo, frame_data_valid)
+        -- synchronous reset
+        	if rst = '0' then
+
+            		state <= IDLE;
+            		store_meta_data <= (others => '0');
+
+        	else
+
+            	-- state update
+            	state <= next_state;
+
+            	-- register metadata
+            	if state = IDLE and meta_data_valid = '1' then
+                	store_meta_data <= meta_data;
+            	end if;
+
+        	end if;
+    	end if;
+	end process seq;
+
+	comp: process(state, meta_data, meta_data_valid, space_in_frame_fifo, frame_data_valid, store_meta_data)
 	begin
+		
+		next_state <= state;
+   		enough_space <= '0';
+    		meta_data_write_enable <= '0';
+
 		case(state) is 
 			when IDLE => 
 				if (meta_data_valid = '1') then
 					next_state <= CHECK_SPACE;
+				else 
+					next_state <= IDLE; 
 				end if; 
 				
-					enough_space <= '0'; 
-					meta_data_write_enable <= '0';
-					store_meta_data	<= meta_data; 
+				enough_space <= '0'; 
+				meta_data_write_enable <= '0';
+				store_meta_data	<= meta_data; 
  
 			when CHECK_SPACE => 
 				if (store_meta_data(10 downto 0) < space_in_frame_fifo) then
 					next_state <= STORE_DATA; 
-				end if; 
+				else
+        				next_state <= CHECK_SPACE;
+    				end if; 
 					
 				enough_space <= '0';  
 				meta_data_write_enable <= '0';  	
@@ -253,13 +277,15 @@ architecture rtl of crossbar_double_fifo is
 			when SEND_HANDSHAKE => 
 				if (frame_data_valid = '0') then
 					next_state <= IDLE;
-				end if; 
+				else
+                			next_state <= SEND_HANDSHAKE;
+            			end if; 
 
 				enough_space <= frame_data_valid; 
 				meta_data_write_enable <= '0'; 
 					
 			end case; 
-		end process comp;  
+		end process comp;    
 
 			 
 	empty_frame_fifo <= empty_frame_fifo_int; 		
