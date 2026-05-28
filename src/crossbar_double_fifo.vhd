@@ -52,6 +52,13 @@ architecture rtl of crossbar_double_fifo is
 	signal reg_reg_read_enable	: std_logic:= '0'; 
 
 	signal empty_frame_fifo_int	: std_logic := '1'; 
+
+	signal store_meta_data		: std_logic_vector(15 downto 0):= x"0000"; 
+
+	-- FSM 
+
+	type state_type is (IDLE, CHECK_SPACE,STORE_DATA, SEND_HANDSHAKE); 
+	signal state, next_state : state_type;  
 	
 
 	component Frame_fifo
@@ -103,7 +110,7 @@ architecture rtl of crossbar_double_fifo is
 		port map(
 			clk => clk,
 			rst => rst,		
-      			wr_data => 	meta_data,	    	
+      			wr_data => 	store_meta_data,	    	
 			write_enable => meta_data_write_enable, 
       			rd_data => 	frame_size,      	
       			read_enable =>  meta_data_read_enable 	
@@ -121,27 +128,6 @@ architecture rtl of crossbar_double_fifo is
 	end process; 
 
 
-	-- checks if there is enough space in frame_fifo and store the meta_data if true.
-	process(clk)
-	begin
-		if rising_edge(clk) then
-			if (meta_data_valid = '1') then 
-				if (meta_data(10 downto 0) < space_in_frame_fifo) then
-					enough_space <= '1';
-					meta_data_write_enable <= '1';  
-					 
-				else 
-					enough_space <= '0';
-	
-				end if;
-			else 
-		
-				meta_data_write_enable <= '0';  
-		 
-			end if; 
-		end if; 
-	end process; 
-
 	-- RR_read_enable is delayed to match when frame_size is correct. 
 	process(clk)
 	begin
@@ -157,9 +143,9 @@ architecture rtl of crossbar_double_fifo is
 	process(clk) 
 	begin
 		if rising_edge(clk) then
-			if reg_reg_RR_read_enable = '1' then 
+			if reg_reg_reg_RR_read_enable = '1' then -- change this
 				--end_of_frame_value <= std_logic_vector(unsigned(frame_size(11 downto 0)) + unsigned(read_ptr_int(11 downto 0)));
-				end_of_enable_value <= std_logic_vector(unsigned(frame_size(11 downto 0)) + unsigned(read_ptr_int(11 downto 0))-2);  
+				end_of_enable_value <= std_logic_vector(unsigned(frame_size(10 downto 0)) + unsigned(read_ptr_int(11 downto 0))-2);  
 			end if; 
 		end if; 
 	end process; 		
@@ -199,7 +185,7 @@ architecture rtl of crossbar_double_fifo is
         		if end_of_enable_int = '1' then
             			frame_fifo_read_enable <= '0';
 
-        		elsif reg_reg_reg_RR_read_enable = '1' then
+        		elsif reg_reg_RR_read_enable = '1' then
             			frame_fifo_read_enable <= '1';
 
         		end if;
@@ -230,8 +216,53 @@ architecture rtl of crossbar_double_fifo is
 	end process; 
 
 
+	--FSM to load
+	seq: process(clk, rst)
+	begin
+		if (rst = '0') then 
+			state <= IDLE; 
+		elsif(rising_edge(clk)) then 
+			state <= next_state; 
+		end if; 
+	end process seq; 
 
+	comp: process(state, meta_data, meta_data_valid, space_in_frame_fifo, frame_data_valid)
+	begin
+		case(state) is 
+			when IDLE => 
+				if (meta_data_valid = '1') then
+					next_state <= CHECK_SPACE;
+				end if; 
+				
+					enough_space <= '0'; 
+					meta_data_write_enable <= '0';
+					store_meta_data	<= meta_data; 
+ 
+			when CHECK_SPACE => 
+				if (store_meta_data(10 downto 0) < space_in_frame_fifo) then
+					next_state <= STORE_DATA; 
+				end if; 
+					
+				enough_space <= '0';  
+				meta_data_write_enable <= '0';  	
+
+			when STORE_DATA => 
+					next_state <= SEND_HANDSHAKE;
+			
+					enough_space <= '1'; 
+					meta_data_write_enable <= '1';  
 	
+
+			when SEND_HANDSHAKE => 
+				if (frame_data_valid = '0') then
+					next_state <= IDLE;
+				end if; 
+
+				enough_space <= frame_data_valid; 
+				meta_data_write_enable <= '0'; 
+					
+			end case; 
+		end process comp;  
 
 			 
 	empty_frame_fifo <= empty_frame_fifo_int; 		
@@ -241,3 +272,4 @@ architecture rtl of crossbar_double_fifo is
 	
 end architecture rtl;
 
+					  

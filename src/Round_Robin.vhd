@@ -28,18 +28,25 @@ entity Round_Robin is
 	end Round_Robin; 
 
 architecture rtl of Round_Robin is 
-	
+
+
+	signal count_reg 	: std_logic_vector(3 downto 0):= "0110";
+	signal count_ifg_rst	: std_logic := '0';  
+
 	signal count_int 	: std_logic_vector(3 downto 0):= "0001"; 
 	signal count_int_prev 	: std_logic_vector(3 downto 0):= "0001"; 
 	signal count_en	 	: std_logic:= '0'; 
-	type state_type is (ALL_EMPTY, PICK_FIFO, READ_ENABLE, TRANSMIT); 
+
+	type state_type is (ALL_EMPTY, PICK_FIFO, READ_ENABLE, TRANSMIT, IFG_CHECK); 
 	signal state, next_state : state_type;  
 
 begin
 
 	
 	-- sequentiel logic
+
 	
+	-- one hot counter	
 	count : process(clock, reset)
 	begin
     		if (reset = '0') then
@@ -55,6 +62,24 @@ begin
 	end process count;
 
 
+	-- IFG counter
+	process(clock, reset)
+	begin
+		if rising_edge(clock) then 
+			if count_ifg_rst = '1' then
+
+				count_reg <= "0110"; 
+
+			elsif count_reg > 0 then 
+ 
+			count_reg <= count_reg - 1; 
+			
+			end if; 
+		end if;  
+	end process; 
+	
+
+	-- FSM
 	seq: process(clock, reset)
 	begin
 		if (reset = '0') then 
@@ -64,7 +89,7 @@ begin
 		end if; 
 	end process seq; 
 
-	comp: process(state, empty, frame_done, count_int, count_int_prev)
+	comp: process(state, empty, frame_done, count_int, count_int_prev, count_ifg_rst, count_reg)
 	begin
 		case(state) is 
 			when ALL_EMPTY => 
@@ -75,14 +100,29 @@ begin
 					count_en <= '0'; 
 					read_en <= "0000"; 
 					sel <= "0000";
+					count_ifg_rst <= '0';
  
 			when PICK_FIFO => 
 				if ((empty and count_int )= "0000") then
-					next_state <= READ_ENABLE; 
+					next_state <= IFG_CHECK; 
 				end if; 
 					count_en <= '1'; 
 					read_en <= "0000"; 
 					sel <= "0000";
+					count_ifg_rst <= '0';
+
+			when IFG_CHECK => 
+				if (count_reg = 0) then
+					next_state <= READ_ENABLE;
+				else 
+					next_state <= IFG_CHECK; 
+				end if; 
+
+					count_en <= '0'; 
+					read_en <= "0000"; 
+					sel <= "0000";
+					count_ifg_rst <= '0';
+		
 			
 			when READ_ENABLE =>
 					next_state <= TRANSMIT;
@@ -90,6 +130,7 @@ begin
 		 			count_en <= '0'; 
 					read_en <= count_int_prev; 
 					sel <= count_int_prev;
+					count_ifg_rst <= '0';  
 
 			when TRANSMIT =>
 				if (empty = "1111") then 
@@ -102,10 +143,8 @@ begin
 		 			count_en <= '0'; 
 					read_en <= "0000"; 
 					sel <= count_int_prev;
-
-
-		
-		
+					count_ifg_rst <= '1'; 
+					
 			end case; 
 		end process comp;  	
 				
