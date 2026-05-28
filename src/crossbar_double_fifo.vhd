@@ -129,15 +129,19 @@ architecture rtl of crossbar_double_fifo is
 
 
 	-- RR_read_enable is delayed to match when frame_size is correct. 
-	process(clk)
+	process(clk, rst)
 	begin
-		if rising_edge(clk) then
-			reg_RR_read_enable <= RR_read_enable; 
-			reg_reg_RR_read_enable <= reg_RR_read_enable; 
-			reg_reg_reg_RR_read_enable <= reg_reg_RR_read_enable; 
-		end if; 
-	end process; 
+    		if rst = '0' then
+        		reg_RR_read_enable         <= '0';
+        		reg_reg_RR_read_enable     <= '0';
+        		reg_reg_reg_RR_read_enable <= '0';
 
+    		elsif rising_edge(clk) then
+        		reg_RR_read_enable         <= RR_read_enable;
+        		reg_reg_RR_read_enable     <= reg_RR_read_enable;
+        		reg_reg_reg_RR_read_enable <= reg_reg_RR_read_enable;
+    		end if;
+	end process;
 
 	-- Calculate end_of_frame value. 
 	process(clk) 
@@ -150,19 +154,6 @@ architecture rtl of crossbar_double_fifo is
 		end if; 
 	end process; 		
 		
-
-	
-	-- end of frame
-	--process(clk) 
-	--begin
-	--	if rising_edge(clk) then
-	--		if (read_ptr_int(11 downto 0) = end_of_frame_value) then 
-	--			end_of_frame_int <= '1';
-	--		else
-	--			end_of_frame_int <= '0';
-	--		end if; 
-	--	end if; 
-	--end process;
 
 	-- end of frame
 	process(clk) 
@@ -193,9 +184,15 @@ architecture rtl of crossbar_double_fifo is
 	end process; 
 
 	--controles the valid signal on the output port.
-	process(clk)
+	process(clk, rst)
 	begin
-		if rising_edge(clk) then
+    		if rst = '0' then
+        		reg_read_enable        		<= '0';
+        		reg_reg_read_enable     	<= '0';
+        		reg_end_of_enable_int 		<= '0';
+			reg_reg_end_of_enable_int 	<= '0';
+
+		elsif rising_edge(clk) then
 			reg_read_enable <= frame_fifo_read_enable; 
 			reg_reg_read_enable <= reg_read_enable;
 			reg_end_of_enable_int <= end_of_enable_int; 
